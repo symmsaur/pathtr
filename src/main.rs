@@ -2,6 +2,7 @@ extern crate rand;
 
 use std::ops::Mul;
 use std::ops::Add;
+use std::ops::Sub;
 
 fn main() {
     let cam = Camera {
@@ -74,6 +75,30 @@ impl Add for Vector {
     }
 }
 
+impl Sub for Vector {
+    type Output = Vector;
+
+    fn sub(self, rhs: Vector) -> Vector {
+        Vector {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
+impl Sub for Point {
+    type Output = Vector;
+
+    fn sub(self, rhs: Point) -> Vector {
+        Vector {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
 impl Mul<Vector> for f64 {
     type Output = Vector;
 
@@ -87,7 +112,7 @@ impl Mul<Vector> for f64 {
 }
 
 struct Sphere {
-    centre: Point,
+    center: Point,
     radius: f64,
 }
 
@@ -112,6 +137,10 @@ fn translate(p: Point, v: Vector) -> Point {
     Point {x: p.x + v.x, y: p.y + v.y, z: p.z + v.z }
 }
 
+fn dot(v1: Vector, v2: Vector) -> f64 {
+    v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+}
+
 fn cross(v1: Vector, v2: Vector) -> Vector {
     Vector {
         x: v1.y * v2.z - v1.z * v2.y,
@@ -132,6 +161,24 @@ fn generate_ray(cam: Camera) -> Ray {
     let p_disp = p_y * up + p_x * left;
     let through = translate(p_orig, p_disp);
     Ray::create(origin, through)
+}
+
+// Maybe we need to return more than one point ...
+fn intersect(ray: Ray, sphere: Sphere) -> Option<Point> {
+    let b = 2.0 * dot(ray.direction, ray.origin - sphere.center);
+    println!("b: {}", b);
+    let c = (ray.origin - sphere.center).square_length() - sphere.radius
+        * sphere.radius;
+    println!("c: {}", c);
+    let delta = b * b - 4.0 * c;
+    println!("delta: {}", delta);
+    if delta < 0.0
+    {
+        return None;
+    }
+    let t = (-b - delta.sqrt())/2.0;
+    println!("t: {}", t);
+    Some(translate(ray.origin, t * ray.direction))
 }
 
 #[cfg(test)]
@@ -182,6 +229,46 @@ mod tests {
         let v2 = Vector{x: 0.0, y: 0.0, z: 1.0};
         let res = cross(v1,v2);
         assert_eq!(0.0, res.x);
+        assert_eq!(0.0, res.y);
+        assert_eq!(0.0, res.z);
+    }
+
+    #[test]
+    fn dot_test() {
+        let v1 = Vector{x: 1.0, y: 2.0, z: 3.0};
+        let v2 = Vector{x: 5.0, y: 7.0, z: 11.0};
+        let res = dot(v1, v2);
+        assert_eq!(5.0 + 14.0 + 33.0, res);
+    }
+
+    #[test]
+    fn sphere_ray_intersect_test() {
+        let ray = Ray{
+            origin: Point {x: -2.0, y: 0.0, z: 0.0},
+            direction: Vector {x: 1.0, y: 0.0, z: 0.0}
+        };
+        let sphere = Sphere{
+            center: Point{x: 0.0, y: 0.0, z: 0.0},
+            radius: 1.0
+        };
+        let res = intersect(ray, sphere).unwrap();
+        assert_eq!(-1.0, res.x);
+        assert_eq!(0.0, res.y);
+        assert_eq!(0.0, res.z);
+    }
+
+    #[test]
+    fn sphere_ray_intersect_test_2() {
+        let ray = Ray{
+            origin: Point {x: -2.0, y: 0.0, z: 0.0},
+            direction: Vector {x: 1.0, y: 0.0, z: 0.0}
+        };
+        let sphere = Sphere{
+            center: Point{x: 0.0, y: 0.0, z: 0.0},
+            radius: 0.5
+        };
+        let res = intersect(ray, sphere).unwrap();
+        assert_eq!(-0.5, res.x);
         assert_eq!(0.0, res.y);
         assert_eq!(0.0, res.z);
     }
