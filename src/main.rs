@@ -8,9 +8,9 @@ use std::path::Path;
 
 fn main() {
     let cam = Camera {
-        look_from: math::Point {x: 1.1, y: 1.0, z: -2.0},
-        direction: math::Vector {x: 0.0, y: 0.0, z: 1.0},
-        up: math::Vector {x:0.0, y: 0.0, z: 1.0},
+        look_from: math::Point {x: 0.0, y: -5.0, z: 0.0},
+        direction: math::Vector {x: 0.0, y: 1.0, z: 0.0},
+        up: math::Vector {x:1.0, y: 0.0, z: 0.0},
         fov: 3.14/4.0,
         aspect: 1.0,
     };
@@ -22,7 +22,7 @@ fn main() {
     scene.objs.push(Box::new(p1));
     let p2 = math::Sphere {
         center: Point {x: 0.0, y: 0.0, z: 0.0},
-        radius: 1.5,
+        radius: 1.0,
     };
     scene.objs.push(Box::new(p2));
     const WIDTH: usize = 200;

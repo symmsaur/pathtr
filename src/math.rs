@@ -36,7 +36,7 @@ pub struct Vector {
 impl Vector {
     pub fn normalize(self) -> Vector {
         let l = self.length();
-        Vector{x: self.x / l, y: self.y, z: self.z}
+        Vector{x: self.x / l, y: self.y / l, z: self.z / l}
     }
     pub fn length(self) -> f64 {
         self.square_length().sqrt()
@@ -160,6 +160,34 @@ mod tests {
     }
 
     #[test]
+    fn normalize_test_x() {
+        let v = Vector{x: 2.0, y: 0.0, z: 0.0};
+        let res = v.normalize();
+        assert!(res.x - 1.0 < 1e-10);
+    }
+
+    #[test]
+    fn normalize_test_y() {
+        let v = Vector{x: 0.0, y: 4.0, z: 0.0};
+        let res = v.normalize();
+        assert!(res.y - 1.0 < 1e-10);
+    }
+
+    #[test]
+    fn normalize_test_z() {
+        let v = Vector{x: 0.0, y: 0.0, z: 5.0};
+        let res = v.normalize();
+        assert!(res.z - 1.0 < 1e-10);
+    }
+
+    #[test]
+    fn normalize_test() {
+        let v = Vector{x: 76.0, y: 14.0, z: 5.0};
+        let res = v.normalize();
+        assert!(res.length() - 1.0 < 1e-10);
+    }
+
+    #[test]
     fn translate_test() {
         let p = Point {x: 1.0, y: 2.0, z: 3.0};
         let v = Vector {x: 4.0, y: 5.0, z: 6.0};
@@ -198,6 +226,26 @@ mod tests {
     }
 
     #[test]
+    fn vec_scalar_mul_test() {
+        let v1 = Vector{x: 1.0, y: 2.0, z: 3.0};
+        let s = 5.0;
+        let res = s * v1;
+        assert_eq!(5.0, res.x);
+        assert_eq!(10.0, res.y);
+        assert_eq!(15.0, res.z);
+    }
+
+    #[test]
+    fn point_sub_test() {
+        let p1 = Point{x: 4.0, y: 4.0, z: 4.0};
+        let p2 = Point{x: 1.0, y: 2.0, z: 3.0};
+        let res = p1 - p2;
+        assert_eq!(3.0, res.x);
+        assert_eq!(2.0, res.y);
+        assert_eq!(1.0, res.z);
+    }
+
+    #[test]
     fn sphere_ray_intersect_test() {
         let ray = Ray{
             origin: Point {x: -2.0, y: 0.0, z: 0.0},
@@ -216,16 +264,16 @@ mod tests {
     #[test]
     fn sphere_ray_intersect_test_2() {
         let ray = Ray{
-            origin: Point {x: -2.0, y: 0.0, z: 0.0},
-            direction: Vector {x: 1.0, y: 0.0, z: 0.0}
+            origin: Point {x: 0.0, y: -1.0, z: 0.0},
+            direction: Vector {x: 0.0, y: 1.0, z: 0.0}
         };
         let sphere = Sphere{
             center: Point{x: 0.0, y: 0.0, z: 0.0},
             radius: 0.5
         };
         let res = sphere.intersect(&ray).unwrap();
-        assert_eq!(-0.5, res.x);
-        assert_eq!(0.0, res.y);
+        assert_eq!(0.0, res.x);
+        assert_eq!(-0.5, res.y);
         assert_eq!(0.0, res.z);
     }
 
