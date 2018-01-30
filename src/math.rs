@@ -228,4 +228,18 @@ mod tests {
         assert_eq!(0.0, res.y);
         assert_eq!(0.0, res.z);
     }
+
+    #[test]
+    fn sphere_ray_intersect_test_miss() {
+        let ray = Ray{
+            origin: Point {x: 1.5, y: 1.5, z: -10.0},
+            direction: Vector {x: 0.0, y: 0.0, z: 1.0}
+        };
+        let sphere = Sphere{
+            center: Point{x: 0.0, y: 0.0, z: 0.0},
+            radius: 2.0
+        };
+        let res = sphere.intersect(&ray);
+        assert!(res.is_none());
+    }
 }
