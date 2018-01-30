@@ -14,7 +14,7 @@ pub struct Ray {
 
 impl Ray {
     pub fn create(origin: Point, through: Point) -> Ray {
-        let direction = displacement(origin, through).normalize();
+        let direction = (through - origin).normalize();
         Ray {origin: origin, direction: direction}
     }
 }
@@ -104,11 +104,6 @@ pub struct Plane {
     pub normal: Vector,
 }
 
-
-pub fn displacement(p1: Point, p2: Point) -> Vector {
-    Vector {x: p2.x - p1.x, y: p2.y - p1.y, z: p2.z - p1.z}
-}
-
 pub fn translate(p: Point, v: Vector) -> Point {
     Point {x: p.x + v.x, y: p.y + v.y, z: p.z + v.z }
 }
@@ -155,16 +150,6 @@ impl Intersectable for Sphere {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn displacement_test() {
-        let p1 = Point {x: 1.0, y: 2.0, z: 3.0};
-        let p2 = Point {x: 2.0, y: 4.0, z: 6.0};
-        let v = displacement(p1, p2);
-        assert_eq!(1.0, v.x);
-        assert_eq!(2.0, v.y);
-        assert_eq!(3.0, v.z);
-    }
 
     #[test]
     fn length_test() {
@@ -222,7 +207,7 @@ mod tests {
             center: Point{x: 0.0, y: 0.0, z: 0.0},
             radius: 1.0
         };
-        let res = sphere.intersect(ray).unwrap();
+        let res = sphere.intersect(&ray).unwrap();
         assert_eq!(-1.0, res.x);
         assert_eq!(0.0, res.y);
         assert_eq!(0.0, res.z);
@@ -238,7 +223,7 @@ mod tests {
             center: Point{x: 0.0, y: 0.0, z: 0.0},
             radius: 0.5
         };
-        let res = sphere.intersect(ray).unwrap();
+        let res = sphere.intersect(&ray).unwrap();
         assert_eq!(-0.5, res.x);
         assert_eq!(0.0, res.y);
         assert_eq!(0.0, res.z);
