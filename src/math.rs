@@ -4,12 +4,12 @@ use std::ops::Add;
 use std::ops::Sub;
 
 pub trait Intersectable {
-    fn intersect(&self, ray: &Ray) -> Option<Point>;
+    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)>;
 }
 
 pub struct Ray {
-    origin: Point,
-    direction: Vector,
+    pub origin: Point,
+    pub direction: Vector,
 }
 
 impl Ray {
@@ -121,7 +121,7 @@ pub fn cross(v1: Vector, v2: Vector) -> Vector {
 }
 
 impl Intersectable for Plane {
-    fn intersect(&self, _ray: &Ray) -> Option<Point> {
+    fn intersect(&self, _ray: &Ray) -> Option<(Point, Vector, f64)> {
         //Some(Point {x:0.0, y:0.0, z:0.0})
         None
     }
@@ -129,7 +129,7 @@ impl Intersectable for Plane {
 
 impl Intersectable for Sphere {
     // Maybe we need to return more than one point ...
-    fn intersect(&self, ray: &Ray) -> Option<Point> {
+    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)> {
         let b = 2.0 * dot(ray.direction, ray.origin - self.center);
         //println!("b: {}", b);
         let c = (ray.origin - self.center).square_length() - self.radius
@@ -143,7 +143,13 @@ impl Intersectable for Sphere {
         }
         let t = (-b - delta.sqrt())/2.0;
         //println!("t: {}", t);
-        Some(translate(ray.origin, t * ray.direction))
+        if t > 0.0 {
+            let intersection = translate(ray.origin, t * ray.direction);
+            let normal = (intersection - self.center).normalize();
+            Some((intersection, normal, t))
+        } else {
+            None
+        }
     }
 }
 
@@ -255,7 +261,7 @@ mod tests {
             center: Point{x: 0.0, y: 0.0, z: 0.0},
             radius: 1.0
         };
-        let res = sphere.intersect(&ray).unwrap();
+        let (res, _, _) = sphere.intersect(&ray).unwrap();
         assert_eq!(-1.0, res.x);
         assert_eq!(0.0, res.y);
         assert_eq!(0.0, res.z);
@@ -271,10 +277,26 @@ mod tests {
             center: Point{x: 0.0, y: 0.0, z: 0.0},
             radius: 0.5
         };
-        let res = sphere.intersect(&ray).unwrap();
+        let (res, _, _) = sphere.intersect(&ray).unwrap();
         assert_eq!(0.0, res.x);
         assert_eq!(-0.5, res.y);
         assert_eq!(0.0, res.z);
+    }
+
+    #[test]
+    fn sphere_ray_intersect_translated() {
+        let ray = Ray{
+            origin: Point {x: 1.0, y: 1.0, z: 3.0},
+            direction: Vector {x: 0.0, y: 1.0, z: 0.0}
+        };
+        let sphere = Sphere{
+            center: Point{x: 1.0, y: 2.0, z: 3.0},
+            radius: 0.5
+        };
+        let (res, _, _) = sphere.intersect(&ray).unwrap();
+        assert_eq!(1.0, res.x);
+        assert_eq!(1.5, res.y);
+        assert_eq!(3.0, res.z);
     }
 
     #[test]
@@ -289,5 +311,21 @@ mod tests {
         };
         let res = sphere.intersect(&ray);
         assert!(res.is_none());
+    }
+
+    #[test]
+    fn sphere_ray_intersect_test_normal() {
+        let ray = Ray{
+            origin: Point {x: 0.0, y: -1.0, z: 0.0},
+            direction: Vector {x: 0.0, y: 1.0, z: 0.0}
+        };
+        let sphere = Sphere{
+            center: Point{x: 0.0, y: 0.0, z: 0.0},
+            radius: 0.5
+        };
+        let (_, normal, _) = sphere.intersect(&ray).unwrap();
+        assert_eq!(0.0, normal.x);
+        assert_eq!(-1.0, normal.y);
+        assert_eq!(0.0, normal.z);
     }
 }
