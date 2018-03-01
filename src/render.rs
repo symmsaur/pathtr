@@ -8,7 +8,7 @@ use scene;
 pub fn render(scene: &scene::Scene, camera: &scene::Camera, width: usize, height: usize) -> Vec<u8> {
     let mut buffer = vec![0.0; width * height];
 
-    let n_rays = width*height*150;
+    let n_rays = width*height*200;
     for i in 0..n_rays {
         let (x, y, ray) = gen_ray_c(&camera);
         let val = sample(&scene, ray);
@@ -79,12 +79,6 @@ fn shoot_ray(scene: &scene::Scene, ray: &Ray) -> Option<(Point, Vector, f64)> {
         }
     }
     return Some(min_ix);
-    //let mut intersections = scene.objs.iter().filter_map(|o| o.intersect(&ray));
-    //if intersections.next().is_some() {
-        //intersections.min_by(|i1, i2| i1.2.partial_cmp(&i2.2).unwrap())
-    //} else {
-        //None
-    //}
 }
 
 fn gen_ray_n(start: Point, normal: Vector) -> Ray {
@@ -110,7 +104,8 @@ fn gen_ray_c(cam: &scene::Camera) -> (f64, f64, Ray) {
     let p_x = lr_range * (-1.0 + param_x);
     //println!{"p_x {}", p_x};
     let param_y = 2.0 * rand::random::<f64>();
-    let p_y = ud_range * (-1.0 + param_y);
+    // Screen y goes from top to bottom
+    let p_y = ud_range * (1.0 - param_y);
     //println!{"p_y {}", p_y};
     let p_disp = p_y * cam.up + p_x * left;
     let through = translate(p_orig, p_disp);

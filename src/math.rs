@@ -104,6 +104,13 @@ pub struct Plane {
     pub normal: Vector,
 }
 
+impl Plane {
+    fn signed_distance(&self, point: Point) -> f64 {
+        let pp = point - self.point;
+        dot(pp, self.normal)
+    }
+}
+
 pub fn translate(p: Point, v: Vector) -> Point {
     Point {x: p.x + v.x, y: p.y + v.y, z: p.z + v.z }
 }
@@ -121,9 +128,19 @@ pub fn cross(v1: Vector, v2: Vector) -> Vector {
 }
 
 impl Intersectable for Plane {
-    fn intersect(&self, _ray: &Ray) -> Option<(Point, Vector, f64)> {
-        //Some(Point {x:0.0, y:0.0, z:0.0})
-        None
+    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)> {
+        let v = -dot(ray.direction, self.normal);
+        if v <= 0.0 {
+            // The ray is moving away from the plane.
+            return None;
+        }
+        let d = self.signed_distance(ray.origin);
+        if d <= 0.0 {
+            // The ray started inside the plane.
+            return None;
+        }
+        let t = d / v;
+        Some((translate(ray.origin, t * ray.direction), self.normal, t))
     }
 }
 
@@ -293,10 +310,11 @@ mod tests {
             center: Point{x: 1.0, y: 2.0, z: 3.0},
             radius: 0.5
         };
-        let (res, _, _) = sphere.intersect(&ray).unwrap();
+        let (res, _, t) = sphere.intersect(&ray).unwrap();
         assert_eq!(1.0, res.x);
         assert_eq!(1.5, res.y);
         assert_eq!(3.0, res.z);
+        assert_eq!(0.5, t);
     }
 
     #[test]
@@ -327,5 +345,84 @@ mod tests {
         assert_eq!(0.0, normal.x);
         assert_eq!(-1.0, normal.y);
         assert_eq!(0.0, normal.z);
+    }
+
+    #[test]
+    fn plane_signed_distance_positive() {
+        let plane = Plane {
+            point:  Point {x: -1.0, y: 100.0, z: 101.0},
+            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+        };
+        let point = Point {x: 1.0, y: 0.0, z: 0.0};
+
+        let d = plane.signed_distance(point);
+
+        assert_eq!(d, 2.0);
+    }
+
+    #[test]
+    fn plane_signed_distance_negative() {
+        let plane = Plane {
+            point:  Point {x: 3.0, y: 0.0, z: 0.0},
+            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+        };
+        let point = Point {x: 1.0, y: 0.0, z: 0.0};
+
+        let d = plane.signed_distance(point);
+
+        assert_eq!(d, -2.0);
+    }
+
+    #[test]
+    fn plane_ray_intersection_hit() {
+        let ray = Ray {
+            origin: Point {x: 1.0, y: 2.0, z: 3.0},
+            direction: Vector {x: -1.0, y: 0.0, z: 0.0}
+        };
+        let plane = Plane {
+            point:  Point {x: -1.0, y: 0.0, z: 0.0},
+            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+        };
+
+        let (p, _, _) = plane.intersect(&ray).unwrap();
+
+        assert_eq!(2.0, p.y);
+        assert_eq!(3.0, p.z);
+        assert_eq!(-1.0, p.x);
+    }
+
+    #[test]
+    fn plane_ray_intersection_hit_angled() {
+        let ray = Ray {
+            origin: Point {x: 1.0, y: 0.0, z: 0.0},
+            direction: (Vector {x: -1.0, y: -2.0, z: 0.0}).normalize()
+        };
+        let plane = Plane {
+            point:  Point {x: -1.0, y: 0.0, z: 0.0},
+            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+        };
+
+        let (p, _, t) = plane.intersect(&ray).unwrap();
+
+        assert_eq!(-1.0, p.x);
+        assert_eq!(-4.0, p.y);
+        assert_eq!(0.0, p.z);
+        assert_eq!((Vector {x: -2.0, y: -4.0, z: 0.0}).length(), t);
+    }
+
+    #[test]
+    fn plane_ray_intersection_miss() {
+        let ray = Ray {
+            origin: Point {x: 1.0, y: 0.0, z: 0.0},
+            direction: Vector {x: 1.0, y: 0.0, z: 0.0}
+        };
+        let plane = Plane {
+            point:  Point {x: -1.0, y: 0.0, z: 0.0},
+            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+        };
+
+        let res = plane.intersect(&ray);
+
+        assert!(res.is_none());
     }
 }
