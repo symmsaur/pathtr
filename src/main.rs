@@ -52,6 +52,7 @@ fn main() {
     const HEIGHT: usize = 300;
 
     let img_buffer = render::render(&scene, &camera, WIDTH, HEIGHT);
+
     image::save_buffer(&Path::new("image.png"), &img_buffer[..],
                        WIDTH as u32, HEIGHT as u32, image::RGBA(8))
         .unwrap();
