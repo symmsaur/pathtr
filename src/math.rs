@@ -4,7 +4,7 @@ use std::ops::Add;
 use std::ops::Sub;
 use std::ops::Neg;
 
-pub trait Intersectable {
+pub trait Intersectable: Sync + Send {
     fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)>;
 }
 
