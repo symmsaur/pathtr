@@ -7,4 +7,5 @@ authors = ["Jonathan Karlsson <karlsjona@gmail.com>"]
 image = "*"
 rand = "*"
 cpuprofiler = "*"
+time = "*"
 

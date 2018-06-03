@@ -7,13 +7,11 @@ use std::io::{self, Write};
 use math::*;
 use scene;
 
-pub fn render(scene: &scene::Scene, camera: &scene::Camera, width: usize, height: usize) -> Vec<u8> {
+pub fn render(scene: &scene::Scene, camera: &scene::Camera, width: usize, height: usize, n: u32) -> Vec<u8> {
     let mut buffer = vec![0.0; width * height];
-
-    let n_rays = width*height*200;
-    println!("n_rays: {}", n_rays);
+    println!("n_rays: {}", n);
     let mut rng = rand::XorShiftRng::new_unseeded();
-    for i in 0..n_rays {
+    for i in 0..n {
         let (x, y, ray) = gen_ray_c(&camera, &mut rng);
         let val = sample(&scene, ray, &mut rng);
         //println!("{}",val);
@@ -23,19 +21,18 @@ pub fn render(scene: &scene::Scene, camera: &scene::Camera, width: usize, height
         // How should we add upp the samples...
         buffer[width * p_y + p_x] += val;
         if i % 1_000_000 == 0 {
-            print!("\r{:.0}%", i as f64 / n_rays as f64 * 100.0);
+            print!("\r{:.0}%", i as f64 / n as f64 * 100.0);
             io::stdout().flush().unwrap();
         }
     }
 
-    // Automatic exposure control
-    //let factor = compute_gain(&buffer);
+    let factor = compute_gain(&buffer);
 
     let mut img_buffer = vec![0; width * height * 4];
     let mut i = 0;
     for val in buffer {
         //println!("Value: {}", val);
-        let img_val = val as u8;
+        let img_val = (val * factor) as u8;
         img_buffer[i] = img_val;
         img_buffer[i+1] = img_val;
         img_buffer[i+2] = img_val;
@@ -47,8 +44,15 @@ pub fn render(scene: &scene::Scene, camera: &scene::Camera, width: usize, height
     return img_buffer;
 }
 
-//fn compute_gain(buffer: &Vec<f64>) -> f64 {
-//}
+fn compute_gain(buffer: &Vec<f64>) -> f64 {
+    let mut max = 0.;
+    for &val in buffer {
+        if val > max {
+            max = val
+        }
+    }
+    return 255. * 1./max
+}
 
 fn sample(scene: &scene::Scene, initial_ray: Ray, mut rng: &mut XorShiftRng) -> f64 {
     let mut ray = initial_ray;
@@ -99,8 +103,13 @@ fn gen_ray_n(start: Point, normal: Vector, rng: &mut XorShiftRng) -> Ray
         let y = 2.0 * rng.gen::<f64>() - 1.0;
         let z = 2.0 * rng.gen::<f64>() - 1.0;
         let v = Vector {x, y, z};
-        if v.square_length() < 1.0 && dot(v, normal) > 0.0 {
-            return Ray{origin: start, direction: v}
+        if v.square_length() < 1.0 {
+            if dot(v, normal) > 0.0 {
+                return Ray{origin: start, direction: v}
+            }
+            else {
+                return Ray{origin: start, direction: -v}
+            }
         }
     }
 }

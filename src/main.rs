@@ -1,4 +1,5 @@
 extern crate image;
+extern crate time;
 
 mod math;
 mod render;
@@ -6,6 +7,7 @@ mod scene;
 
 use math::*;
 use std::path::Path;
+use time::PreciseTime;
 
 fn main() {
     let camera = scene::Camera {
@@ -19,8 +21,14 @@ fn main() {
     let mut scene = scene::Scene::new();
 
     let p1 = Plane {
-        point: Point {x: 0.0, y: 0.0, z: 0.5},
+        point: Point {x: 0.0, y: 0.0, z: 0.0},
         normal: Vector {x: 0.0, y: 0.0, z: 1.0},
+    };
+    scene.objs.push(Box::new(p1));
+
+    let p1 = Plane {
+        point: Point {x: 0.0, y: 2.0, z: 0.0},
+        normal: Vector {x: 0.0, y: -1.0, z: 0.0},
     };
     scene.objs.push(Box::new(p1));
 
@@ -31,28 +39,34 @@ fn main() {
     //scene.objs.push(Box::new(p1));
 
     let p2 = Sphere {
-        center: Point {x: -1.0, y: -1.0, z: 1.0},
+        center: Point {x: 1.0, y: -1.0, z: 1.0},
         radius: 1.0,
     };
     scene.objs.push(Box::new(p2));
 
     let p3 = Sphere {
-        center: Point {x: 1.0, y: 1.0, z: 1.0},
+        center: Point {x: -1.0, y: 1.0, z: 1.0},
         radius: 1.0,
     };
     scene.objs.push(Box::new(p3));
 
     let p4 = Sphere {
-        center: Point {x: -1.0, y: 1.0, z: 1.0},
+        center: Point {x: 1.0, y: 1.0, z: 1.0},
         radius: 1.0,
     };
     scene.objs.push(Box::new(p4));
 
     const WIDTH: usize = 300;
     const HEIGHT: usize = 300;
+    const N: u32 = (WIDTH * HEIGHT * 100) as u32;
 
-    let img_buffer = render::render(&scene, &camera, WIDTH, HEIGHT);
+    let start = PreciseTime::now();
+    let img_buffer = render::render(&scene, &camera, WIDTH, HEIGHT, N);
+    let end = PreciseTime::now();
 
+    let total = start.to(end);
+    println!("Time: {} ms", total.num_milliseconds());
+    println!("Rays per second: {}", 1000 * (N as i64) / total.num_milliseconds());
     image::save_buffer(&Path::new("image.png"), &img_buffer[..],
                        WIDTH as u32, HEIGHT as u32, image::RGBA(8))
         .unwrap();

@@ -2,6 +2,7 @@
 use std::ops::Mul;
 use std::ops::Add;
 use std::ops::Sub;
+use std::ops::Neg;
 
 pub trait Intersectable {
     fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)>;
@@ -66,6 +67,18 @@ impl Sub for Vector {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
             z: self.z - rhs.z,
+        }
+    }
+}
+
+impl Neg for Vector {
+    type Output = Vector;
+
+    fn neg(self) -> Vector {
+        Vector {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
         }
     }
 }
