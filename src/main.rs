@@ -10,6 +10,10 @@ use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
 
+const WIDTH: usize = 300;
+const HEIGHT: usize = 300;
+const N_RAYS: i64 = (WIDTH * HEIGHT * 1000) as i64;
+
 fn main() {
     let camera = Arc::new(scene::Camera {
         look_from: Point {x: -10.0, y: -1.0, z: 3.0},
@@ -21,17 +25,17 @@ fn main() {
 
     let scene = Arc::new(prep_scene());
 
-    const WIDTH: usize = 1000;
-    const HEIGHT: usize = 1000;
-    const N: i64 = (WIDTH * HEIGHT * 5000) as i64;
+    let width = WIDTH;
+    let height = HEIGHT;
+    let n_rays = N_RAYS;
 
     let start = PreciseTime::now();
-    let img_buffer = render::render(scene, camera, WIDTH, HEIGHT, N);
+    let img_buffer = render::render(scene, camera, width, height, n_rays);
     let end = PreciseTime::now();
 
     let total = start.to(end);
     println!("Time: {} ms", total.num_milliseconds());
-    println!("Rays per second: {}", 1000 * N / total.num_milliseconds());
+    println!("Rays per second: {}", 1000 * N_RAYS / total.num_milliseconds());
     image::save_buffer(&Path::new("image.png"), &img_buffer[..],
                        WIDTH as u32, HEIGHT as u32, image::RGBA(8))
         .unwrap();
@@ -51,12 +55,6 @@ fn prep_scene() -> scene::Scene {
         normal: Vector {x: 0.0, y: -1.0, z: 0.0},
     };
     scene.objs.push(Box::new(p1));
-
-    //let p1 = Sphere {
-        //center: Point {x: 0.0, y: 0.0, z: -10000.0},
-        //radius: 10000.0
-    //};
-    //scene.objs.push(Box::new(p1));
 
     let p2 = Sphere {
         center: Point {x: 1.0, y: -1.0, z: 1.0},
