@@ -1,6 +1,7 @@
 extern crate image;
 extern crate time;
 
+mod material;
 mod math;
 mod render;
 mod scene;
@@ -10,16 +11,16 @@ use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
 
-const WIDTH: usize = 300;
-const HEIGHT: usize = 300;
-const N_RAYS: i64 = (WIDTH * HEIGHT * 1000) as i64;
+const WIDTH: usize = 200;
+const HEIGHT: usize = 200;
+const N_RAYS: i64 = (WIDTH * HEIGHT * 20000) as i64;
 
 fn main() {
     let camera = Arc::new(scene::Camera {
-        look_from: Point {x: -10.0, y: -1.0, z: 3.0},
-        direction: (Vector {x: 10.0, y: 1.0, z: -2.0}).normalize(),
+        look_from: Point {x: -12.0, y: -8.0, z: 3.0},
+        direction: (Vector {x: 10.0, y: 6.75, z: -2.0}).normalize(),
         up: Vector {x:0.0, y: 0.0, z: 1.0},
-        fov: 3.14/6.0,
+        fov: 3.14/8.0,
         aspect: 1.0,
     });
 

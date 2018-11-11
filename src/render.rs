@@ -8,6 +8,7 @@ use std::thread;
 
 use math::*;
 use scene;
+use material;
 
 const THREADS: i64 = 4;
 
@@ -84,11 +85,25 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, mut rng: &mut XorShiftRng) -> 
     let mut ray = initial_ray;
     let mut res = 1.0;
     loop {
+        let incoming_direction = ray.direction;
         match shoot_ray(&scene, &ray) {
             Some((p, n, _)) => {
-                // decay light by 50% on each bounce
-                res *= 0.5;
-                ray = gen_ray_n(p, n, &mut rng);
+                let cos_theta = - dot(incoming_direction, n);
+                let r = material::reflection_coefficient(1.2, cos_theta);
+                if rng.gen::<f64>() < r {
+                    ray = Ray {
+                        origin: p,
+                        direction: incoming_direction + 2. * cos_theta * n,
+                    };
+                    // res is unaffected.
+                }
+                else
+                {
+                    // decay light by 60% on each bounce
+                    res *= 0.4;
+                    ray = gen_ray_n(p, n, &mut rng);
+                }
+
             }
             None => {
                 return res;
