@@ -11,9 +11,9 @@ use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
 
-const WIDTH: usize = 200;
-const HEIGHT: usize = 200;
-const N_RAYS: i64 = (WIDTH * HEIGHT * 20000) as i64;
+const WIDTH: usize = 1000;
+const HEIGHT: usize = 1000;
+const N_RAYS: i64 = (WIDTH * HEIGHT * 5000) as i64;
 
 fn main() {
     let camera = Arc::new(scene::Camera {
@@ -49,31 +49,56 @@ fn prep_scene() -> scene::Scene {
         point: Point {x: 0.0, y: 0.0, z: 0.0},
         normal: Vector {x: 0.0, y: 0.0, z: 1.0},
     };
-    scene.objs.push(Box::new(p1));
+    let m1 = material::Material::create(0.5, 1.0, 0.0);
+    let obj1 = scene::Object {
+        shape: Box::new(p1),
+        material: m1,
+    };
+    scene.objs.push(obj1);
 
-    let p1 = Plane {
+    let p2 = Plane {
         point: Point {x: 0.0, y: 2.0, z: 0.0},
         normal: Vector {x: 0.0, y: -1.0, z: 0.0},
     };
-    scene.objs.push(Box::new(p1));
+    let m2 = material::Material::create(0.2, 1.0, 0.0);
+    let obj2 = scene::Object {
+        shape: Box::new(p2),
+        material: m2,
+    };
+    scene.objs.push(obj2);
 
-    let p2 = Sphere {
+    let p3 = Sphere {
         center: Point {x: 1.0, y: -1.0, z: 1.0},
         radius: 1.0,
     };
-    scene.objs.push(Box::new(p2));
-
-    let p3 = Sphere {
-        center: Point {x: -1.0, y: 1.0, z: 1.0},
-        radius: 1.0,
+    let m3 = material::Material::create(0.5, 1.0, 0.0);
+    let obj3 = scene::Object {
+        shape: Box::new(p3),
+        material: m3,
     };
-    scene.objs.push(Box::new(p3));
+    scene.objs.push(obj3);
 
     let p4 = Sphere {
+        center: Point {x: -1.0, y: -1.0, z: 0.7},
+        radius: 0.7,
+    };
+    let m4 = material::Material::create(0.1, 1.3, 0.9);
+    let obj4 = scene::Object {
+        shape: Box::new(p4),
+        material: m4,
+    };
+    scene.objs.push(obj4);
+    // let p3 =     // scene.objs.push(Box::new(p3));
+
+    let p5 = Sphere {
         center: Point {x: 1.0, y: 1.0, z: 1.0},
         radius: 1.0,
     };
-    scene.objs.push(Box::new(p4));
+    let m5 = material::Material::create(0.5, 1.5, 0.0);
+    let obj5 = scene::Object {
+        shape: Box::new(p5),
+        material: m5,
+    };
+    scene.objs.push(obj5);
     return scene;
 }
-

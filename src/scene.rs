@@ -1,7 +1,13 @@
 use math::*;
+use material::Material;
 
 pub struct Scene {
-    pub objs: Vec<Box<Intersectable>>,
+    pub objs: Vec<Object>,
+}
+
+pub struct Object {
+    pub shape: Box<Intersectable>,
+    pub material: Material,
 }
 
 impl Scene {

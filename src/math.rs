@@ -158,12 +158,10 @@ impl Intersectable for Plane {
 }
 
 impl Intersectable for Sphere {
-    // Maybe we need to return more than one point ...
     fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)> {
         let b = 2.0 * dot(ray.direction, ray.origin - self.center);
         //println!("b: {}", b);
-        let c = (ray.origin - self.center).square_length() - self.radius
-            * self.radius;
+        let c = (ray.origin - self.center).square_length() - self.radius * self.radius;
         //println!("c: {}", c);
         let delta = b * b - 4.0 * c;
         //println!("delta: {}", delta);
@@ -171,15 +169,21 @@ impl Intersectable for Sphere {
         {
             return None;
         }
-        let t = (-b - delta.sqrt())/2.0;
-        //println!("t: {}", t);
-        if t > 0.0 {
-            let intersection = translate(ray.origin, t * ray.direction);
+        // Let's assume this is a normal second degree equation solution.
+        let t1 = (-b - delta.sqrt()) / 2.0;
+        if t1 > 0.0 {
+            let intersection = translate(ray.origin, t1* ray.direction);
             let normal = (intersection - self.center).normalize();
-            Some((intersection, normal, t))
-        } else {
-            None
+            return Some((intersection, normal, t1));
         }
+        let t2 = (-b + delta.sqrt()) / 2.0;
+        if t2 > 0.0 {
+            let intersection = translate(ray.origin, t2* ray.direction);
+            // We are inside the sphere
+            let normal = (self.center - intersection).normalize();
+            return Some((intersection, normal, t2));
+        }
+        return None;
     }
 }
 
@@ -358,6 +362,27 @@ mod tests {
         assert_eq!(0.0, normal.x);
         assert_eq!(-1.0, normal.y);
         assert_eq!(0.0, normal.z);
+    }
+
+    fn almost_eq(v1: f64, v2: f64) -> bool {
+        (v1 - v2).abs() < 1e-10
+    }
+
+    #[test]
+    fn sphere_ray_intersect_test_normal_inside() {
+        let direction = (Vector {x: 4.0, y: 5.0, z: 6.0}).normalize();
+        let ray = Ray{
+            origin: Point {x: 1.0, y: 2.0, z: 3.0},
+            direction: direction
+        };
+        let sphere = Sphere{
+            center: Point{x: 1.0, y: 2.0, z: 3.0},
+            radius: 0.5
+        };
+        let (_, normal, _) = sphere.intersect(&ray).unwrap();
+        assert!(almost_eq(-direction.x, normal.x));
+        assert!(almost_eq(-direction.y, normal.y));
+        assert!(almost_eq(-direction.z, normal.z));
     }
 
     #[test]

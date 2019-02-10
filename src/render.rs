@@ -81,77 +81,50 @@ fn compute_gain(buffer: &Vec<f64>) -> f64 {
     return 255. * 1./max
 }
 
-fn sample(scene: &scene::Scene, initial_ray: Ray, mut rng: &mut XorShiftRng) -> f64 {
-    let mut ray = initial_ray;
-    let mut res = 1.0;
+fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> f64 {
+    let mut ray = material::ElRay {
+        ray: initial_ray,
+        light: 1.,
+        ior: 1.,
+        count: 0,
+    };
+    //println!("new sample");
     loop {
-        let incoming_direction = ray.direction;
-        match shoot_ray(&scene, &ray) {
-            Some((p, n, _)) => {
-                let cos_theta = - dot(incoming_direction, n);
-                let r = material::reflection_coefficient(1.2, cos_theta);
-                if rng.gen::<f64>() < r {
-                    ray = Ray {
-                        origin: p,
-                        direction: incoming_direction + 2. * cos_theta * n,
-                    };
-                    // res is unaffected.
-                }
-                else
-                {
-                    // decay light by 60% on each bounce
-                    res *= 0.4;
-                    ray = gen_ray_n(p, n, &mut rng);
-                }
-
+        match shoot_ray(&scene, &ray.ray) {
+            Some((o, p, n, _)) => {
+                ray = o.material.new_ray(ray, p, n, rng);
             }
             None => {
-                return res;
+                return ray.light;
             }
+        }
+        if ray.count > 10 {
+            return ray.light;
         }
     }
 }
 
-fn shoot_ray(scene: &scene::Scene, ray: &Ray) -> Option<(Point, Vector, f64)> {
-    let mut intersection: Option<(Point, Vector, f64)> = None;
+fn shoot_ray<'a>(scene: &'a scene::Scene, ray: &Ray) -> Option<(&'a scene::Object, Point, Vector, f64)> {
+    let mut closest_intersection: Option<(&'a scene:: Object, Point, Vector, f64)> = None;
     for obj in scene.objs.iter() {
-        let new_intersection = obj.intersect(&ray);
+        let new_intersection = obj.shape.intersect(&ray);
         match new_intersection {
-            Some(new_ix) => {
-                match intersection {
-                    Some(ix) => {
-                        if new_ix.2 < ix.2 {
-                            intersection = new_intersection;
+            Some((p, n, t)) => {
+                match closest_intersection {
+                    Some((_, _, _, t_old)) => {
+                        if t < t_old {
+                            closest_intersection = Some((obj, p, n, t));
                         }
                     }
                     None => {
-                        intersection = new_intersection;
+                        closest_intersection = Some((obj, p, n, t));
                     }
                 }
             }
             None => {}
         }
     }
-    return intersection;
-}
-
-fn gen_ray_n(start: Point, normal: Vector, rng: &mut XorShiftRng) -> Ray
-{
-    // uniform sample over half sphere
-    loop {
-        let x = 2.0 * rng.gen::<f64>() - 1.0;
-        let y = 2.0 * rng.gen::<f64>() - 1.0;
-        let z = 2.0 * rng.gen::<f64>() - 1.0;
-        let v = Vector {x, y, z};
-        if v.square_length() < 1.0 {
-            if dot(v, normal) > 0.0 {
-                return Ray{origin: start, direction: v}
-            }
-            else {
-                return Ray{origin: start, direction: -v}
-            }
-        }
-    }
+    return closest_intersection;
 }
 
 fn gen_ray_c(cam: &scene::Camera, rng: &mut XorShiftRng) -> (f64, f64, Ray) {
