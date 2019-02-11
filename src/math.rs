@@ -1,8 +1,7 @@
-
-use std::ops::Mul;
 use std::ops::Add;
-use std::ops::Sub;
+use std::ops::Mul;
 use std::ops::Neg;
+use std::ops::Sub;
 
 pub trait Intersectable: Sync + Send {
     fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)>;
@@ -16,7 +15,10 @@ pub struct Ray {
 impl Ray {
     pub fn create(origin: Point, through: Point) -> Ray {
         let direction = (through - origin).normalize();
-        Ray {origin: origin, direction: direction}
+        Ray {
+            origin: origin,
+            direction: direction,
+        }
     }
 }
 
@@ -37,7 +39,11 @@ pub struct Vector {
 impl Vector {
     pub fn normalize(self) -> Vector {
         let l = self.length();
-        Vector{x: self.x / l, y: self.y / l, z: self.z / l}
+        Vector {
+            x: self.x / l,
+            y: self.y / l,
+            z: self.z / l,
+        }
     }
     pub fn length(self) -> f64 {
         self.square_length().sqrt()
@@ -125,7 +131,11 @@ impl Plane {
 }
 
 pub fn translate(p: Point, v: Vector) -> Point {
-    Point {x: p.x + v.x, y: p.y + v.y, z: p.z + v.z }
+    Point {
+        x: p.x + v.x,
+        y: p.y + v.y,
+        z: p.z + v.z,
+    }
 }
 
 pub fn dot(v1: Vector, v2: Vector) -> f64 {
@@ -136,7 +146,7 @@ pub fn cross(v1: Vector, v2: Vector) -> Vector {
     Vector {
         x: v1.y * v2.z - v1.z * v2.y,
         y: v1.z * v2.x - v1.x * v2.z,
-        z: v1.x * v2.y - v1.y * v1.x
+        z: v1.x * v2.y - v1.y * v1.x,
     }
 }
 
@@ -165,20 +175,19 @@ impl Intersectable for Sphere {
         //println!("c: {}", c);
         let delta = b * b - 4.0 * c;
         //println!("delta: {}", delta);
-        if delta < 0.0
-        {
+        if delta < 0.0 {
             return None;
         }
         // Let's assume this is a normal second degree equation solution.
         let t1 = (-b - delta.sqrt()) / 2.0;
         if t1 > 0.0 {
-            let intersection = translate(ray.origin, t1* ray.direction);
+            let intersection = translate(ray.origin, t1 * ray.direction);
             let normal = (intersection - self.center).normalize();
             return Some((intersection, normal, t1));
         }
         let t2 = (-b + delta.sqrt()) / 2.0;
         if t2 > 0.0 {
-            let intersection = translate(ray.origin, t2* ray.direction);
+            let intersection = translate(ray.origin, t2 * ray.direction);
             // We are inside the sphere
             let normal = (self.center - intersection).normalize();
             return Some((intersection, normal, t2));
@@ -193,7 +202,11 @@ mod tests {
 
     #[test]
     fn length_test() {
-        let v = Vector{x: 1.0, y: 2.0, z: 3.0};
+        let v = Vector {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+        };
         let res = v.length();
         // Reasonable eps?
         assert!((1.0_f64 + 2.0_f64 + 3.0_f64).sqrt() - res < 1e-10);
@@ -201,36 +214,60 @@ mod tests {
 
     #[test]
     fn normalize_test_x() {
-        let v = Vector{x: 2.0, y: 0.0, z: 0.0};
+        let v = Vector {
+            x: 2.0,
+            y: 0.0,
+            z: 0.0,
+        };
         let res = v.normalize();
         assert!(res.x - 1.0 < 1e-10);
     }
 
     #[test]
     fn normalize_test_y() {
-        let v = Vector{x: 0.0, y: 4.0, z: 0.0};
+        let v = Vector {
+            x: 0.0,
+            y: 4.0,
+            z: 0.0,
+        };
         let res = v.normalize();
         assert!(res.y - 1.0 < 1e-10);
     }
 
     #[test]
     fn normalize_test_z() {
-        let v = Vector{x: 0.0, y: 0.0, z: 5.0};
+        let v = Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 5.0,
+        };
         let res = v.normalize();
         assert!(res.z - 1.0 < 1e-10);
     }
 
     #[test]
     fn normalize_test() {
-        let v = Vector{x: 76.0, y: 14.0, z: 5.0};
+        let v = Vector {
+            x: 76.0,
+            y: 14.0,
+            z: 5.0,
+        };
         let res = v.normalize();
         assert!(res.length() - 1.0 < 1e-10);
     }
 
     #[test]
     fn translate_test() {
-        let p = Point {x: 1.0, y: 2.0, z: 3.0};
-        let v = Vector {x: 4.0, y: 5.0, z: 6.0};
+        let p = Point {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+        };
+        let v = Vector {
+            x: 4.0,
+            y: 5.0,
+            z: 6.0,
+        };
         let res = translate(p, v);
         assert_eq!(5.0, res.x);
         assert_eq!(7.0, res.y);
@@ -239,9 +276,17 @@ mod tests {
 
     #[test]
     fn cross_test_1() {
-        let v1 = Vector{x: 1.0, y: 0.0, z: 0.0};
-        let v2 = Vector{x: 0.0, y: 1.0, z: 0.0};
-        let res = cross(v1,v2);
+        let v1 = Vector {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+        };
+        let v2 = Vector {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+        };
+        let res = cross(v1, v2);
         assert_eq!(0.0, res.x);
         assert_eq!(0.0, res.y);
         assert_eq!(1.0, res.z);
@@ -249,9 +294,17 @@ mod tests {
 
     #[test]
     fn cross_test_2() {
-        let v1 = Vector{x: 0.0, y: 0.0, z: 1.0};
-        let v2 = Vector{x: 0.0, y: 0.0, z: 1.0};
-        let res = cross(v1,v2);
+        let v1 = Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+        };
+        let v2 = Vector {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+        };
+        let res = cross(v1, v2);
         assert_eq!(0.0, res.x);
         assert_eq!(0.0, res.y);
         assert_eq!(0.0, res.z);
@@ -259,15 +312,27 @@ mod tests {
 
     #[test]
     fn dot_test() {
-        let v1 = Vector{x: 1.0, y: 2.0, z: 3.0};
-        let v2 = Vector{x: 5.0, y: 7.0, z: 11.0};
+        let v1 = Vector {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+        };
+        let v2 = Vector {
+            x: 5.0,
+            y: 7.0,
+            z: 11.0,
+        };
         let res = dot(v1, v2);
         assert_eq!(5.0 + 14.0 + 33.0, res);
     }
 
     #[test]
     fn vec_scalar_mul_test() {
-        let v1 = Vector{x: 1.0, y: 2.0, z: 3.0};
+        let v1 = Vector {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+        };
         let s = 5.0;
         let res = s * v1;
         assert_eq!(5.0, res.x);
@@ -277,8 +342,16 @@ mod tests {
 
     #[test]
     fn point_sub_test() {
-        let p1 = Point{x: 4.0, y: 4.0, z: 4.0};
-        let p2 = Point{x: 1.0, y: 2.0, z: 3.0};
+        let p1 = Point {
+            x: 4.0,
+            y: 4.0,
+            z: 4.0,
+        };
+        let p2 = Point {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+        };
         let res = p1 - p2;
         assert_eq!(3.0, res.x);
         assert_eq!(2.0, res.y);
@@ -287,13 +360,25 @@ mod tests {
 
     #[test]
     fn sphere_ray_intersect_test() {
-        let ray = Ray{
-            origin: Point {x: -2.0, y: 0.0, z: 0.0},
-            direction: Vector {x: 1.0, y: 0.0, z: 0.0}
+        let ray = Ray {
+            origin: Point {
+                x: -2.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            direction: Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
         };
-        let sphere = Sphere{
-            center: Point{x: 0.0, y: 0.0, z: 0.0},
-            radius: 1.0
+        let sphere = Sphere {
+            center: Point {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            radius: 1.0,
         };
         let (res, _, _) = sphere.intersect(&ray).unwrap();
         assert_eq!(-1.0, res.x);
@@ -303,13 +388,25 @@ mod tests {
 
     #[test]
     fn sphere_ray_intersect_test_2() {
-        let ray = Ray{
-            origin: Point {x: 0.0, y: -1.0, z: 0.0},
-            direction: Vector {x: 0.0, y: 1.0, z: 0.0}
+        let ray = Ray {
+            origin: Point {
+                x: 0.0,
+                y: -1.0,
+                z: 0.0,
+            },
+            direction: Vector {
+                x: 0.0,
+                y: 1.0,
+                z: 0.0,
+            },
         };
-        let sphere = Sphere{
-            center: Point{x: 0.0, y: 0.0, z: 0.0},
-            radius: 0.5
+        let sphere = Sphere {
+            center: Point {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            radius: 0.5,
         };
         let (res, _, _) = sphere.intersect(&ray).unwrap();
         assert_eq!(0.0, res.x);
@@ -319,13 +416,25 @@ mod tests {
 
     #[test]
     fn sphere_ray_intersect_translated() {
-        let ray = Ray{
-            origin: Point {x: 1.0, y: 1.0, z: 3.0},
-            direction: Vector {x: 0.0, y: 1.0, z: 0.0}
+        let ray = Ray {
+            origin: Point {
+                x: 1.0,
+                y: 1.0,
+                z: 3.0,
+            },
+            direction: Vector {
+                x: 0.0,
+                y: 1.0,
+                z: 0.0,
+            },
         };
-        let sphere = Sphere{
-            center: Point{x: 1.0, y: 2.0, z: 3.0},
-            radius: 0.5
+        let sphere = Sphere {
+            center: Point {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0,
+            },
+            radius: 0.5,
         };
         let (res, _, t) = sphere.intersect(&ray).unwrap();
         assert_eq!(1.0, res.x);
@@ -336,13 +445,25 @@ mod tests {
 
     #[test]
     fn sphere_ray_intersect_test_miss() {
-        let ray = Ray{
-            origin: Point {x: 1.5, y: 1.5, z: -10.0},
-            direction: Vector {x: 0.0, y: 0.0, z: 1.0}
+        let ray = Ray {
+            origin: Point {
+                x: 1.5,
+                y: 1.5,
+                z: -10.0,
+            },
+            direction: Vector {
+                x: 0.0,
+                y: 0.0,
+                z: 1.0,
+            },
         };
-        let sphere = Sphere{
-            center: Point{x: 0.0, y: 0.0, z: 0.0},
-            radius: 2.0
+        let sphere = Sphere {
+            center: Point {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            radius: 2.0,
         };
         let res = sphere.intersect(&ray);
         assert!(res.is_none());
@@ -350,13 +471,25 @@ mod tests {
 
     #[test]
     fn sphere_ray_intersect_test_normal() {
-        let ray = Ray{
-            origin: Point {x: 0.0, y: -1.0, z: 0.0},
-            direction: Vector {x: 0.0, y: 1.0, z: 0.0}
+        let ray = Ray {
+            origin: Point {
+                x: 0.0,
+                y: -1.0,
+                z: 0.0,
+            },
+            direction: Vector {
+                x: 0.0,
+                y: 1.0,
+                z: 0.0,
+            },
         };
-        let sphere = Sphere{
-            center: Point{x: 0.0, y: 0.0, z: 0.0},
-            radius: 0.5
+        let sphere = Sphere {
+            center: Point {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            radius: 0.5,
         };
         let (_, normal, _) = sphere.intersect(&ray).unwrap();
         assert_eq!(0.0, normal.x);
@@ -370,14 +503,27 @@ mod tests {
 
     #[test]
     fn sphere_ray_intersect_test_normal_inside() {
-        let direction = (Vector {x: 4.0, y: 5.0, z: 6.0}).normalize();
-        let ray = Ray{
-            origin: Point {x: 1.0, y: 2.0, z: 3.0},
-            direction: direction
+        let direction = (Vector {
+            x: 4.0,
+            y: 5.0,
+            z: 6.0,
+        })
+        .normalize();
+        let ray = Ray {
+            origin: Point {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0,
+            },
+            direction: direction,
         };
-        let sphere = Sphere{
-            center: Point{x: 1.0, y: 2.0, z: 3.0},
-            radius: 0.5
+        let sphere = Sphere {
+            center: Point {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0,
+            },
+            radius: 0.5,
         };
         let (_, normal, _) = sphere.intersect(&ray).unwrap();
         assert!(almost_eq(-direction.x, normal.x));
@@ -388,10 +534,22 @@ mod tests {
     #[test]
     fn plane_signed_distance_positive() {
         let plane = Plane {
-            point:  Point {x: -1.0, y: 100.0, z: 101.0},
-            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+            point: Point {
+                x: -1.0,
+                y: 100.0,
+                z: 101.0,
+            },
+            normal: Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
         };
-        let point = Point {x: 1.0, y: 0.0, z: 0.0};
+        let point = Point {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+        };
 
         let d = plane.signed_distance(point);
 
@@ -401,10 +559,22 @@ mod tests {
     #[test]
     fn plane_signed_distance_negative() {
         let plane = Plane {
-            point:  Point {x: 3.0, y: 0.0, z: 0.0},
-            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+            point: Point {
+                x: 3.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            normal: Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
         };
-        let point = Point {x: 1.0, y: 0.0, z: 0.0};
+        let point = Point {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+        };
 
         let d = plane.signed_distance(point);
 
@@ -414,12 +584,28 @@ mod tests {
     #[test]
     fn plane_ray_intersection_hit() {
         let ray = Ray {
-            origin: Point {x: 1.0, y: 2.0, z: 3.0},
-            direction: Vector {x: -1.0, y: 0.0, z: 0.0}
+            origin: Point {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0,
+            },
+            direction: Vector {
+                x: -1.0,
+                y: 0.0,
+                z: 0.0,
+            },
         };
         let plane = Plane {
-            point:  Point {x: -1.0, y: 0.0, z: 0.0},
-            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+            point: Point {
+                x: -1.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            normal: Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
         };
 
         let (p, _, _) = plane.intersect(&ray).unwrap();
@@ -432,12 +618,29 @@ mod tests {
     #[test]
     fn plane_ray_intersection_hit_angled() {
         let ray = Ray {
-            origin: Point {x: 1.0, y: 0.0, z: 0.0},
-            direction: (Vector {x: -1.0, y: -2.0, z: 0.0}).normalize()
+            origin: Point {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            direction: (Vector {
+                x: -1.0,
+                y: -2.0,
+                z: 0.0,
+            })
+            .normalize(),
         };
         let plane = Plane {
-            point:  Point {x: -1.0, y: 0.0, z: 0.0},
-            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+            point: Point {
+                x: -1.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            normal: Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
         };
 
         let (p, _, t) = plane.intersect(&ray).unwrap();
@@ -445,18 +648,42 @@ mod tests {
         assert_eq!(-1.0, p.x);
         assert_eq!(-4.0, p.y);
         assert_eq!(0.0, p.z);
-        assert_eq!((Vector {x: -2.0, y: -4.0, z: 0.0}).length(), t);
+        assert_eq!(
+            (Vector {
+                x: -2.0,
+                y: -4.0,
+                z: 0.0
+            })
+            .length(),
+            t
+        );
     }
 
     #[test]
     fn plane_ray_intersection_miss() {
         let ray = Ray {
-            origin: Point {x: 1.0, y: 0.0, z: 0.0},
-            direction: Vector {x: 1.0, y: 0.0, z: 0.0}
+            origin: Point {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            direction: Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
         };
         let plane = Plane {
-            point:  Point {x: -1.0, y: 0.0, z: 0.0},
-            normal: Vector {x: 1.0, y: 0.0, z: 0.0}
+            point: Point {
+                x: -1.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            normal: Vector {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0,
+            },
         };
 
         let res = plane.intersect(&ray);

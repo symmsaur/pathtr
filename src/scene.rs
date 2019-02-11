@@ -1,5 +1,5 @@
-use math::*;
 use material::Material;
+use math::*;
 
 pub struct Scene {
     pub objs: Vec<Object>,
@@ -12,7 +12,7 @@ pub struct Object {
 
 impl Scene {
     pub fn new() -> Scene {
-        Scene {objs: Vec::new()}
+        Scene { objs: Vec::new() }
     }
 }
 
