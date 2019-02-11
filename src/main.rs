@@ -13,7 +13,7 @@ use time::PreciseTime;
 
 const WIDTH: usize = 1000;
 const HEIGHT: usize = 1000;
-const N_RAYS: i64 = (WIDTH * HEIGHT * 5000) as i64;
+const N_RAYS: i64 = (WIDTH * HEIGHT * 100) as i64;
 
 fn main() {
     let camera = Arc::new(scene::Camera {

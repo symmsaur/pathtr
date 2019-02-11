@@ -19,13 +19,15 @@ fn start_render_thread(scene: &Arc<scene::Scene>, camera: &Arc<scene::Camera>, t
     thread::spawn(move || {
         let mut buffer = vec![0.0; width * height];
         let mut rng = rand::XorShiftRng::new_unseeded();
-        for i in 0..n {
-            let (x, y, ray) = gen_ray_c(&my_camera, &mut rng);
-            let val = sample(&my_scene, ray, &mut rng);
-            let p_x = (width as f64 * x) as usize;
-            let p_y = (height as f64 * y) as usize;
-            buffer[width * p_y + p_x] += val;
-            if i % 1_000_000 == 0 {
+        for y in 0..height {
+            for x in 0..width {
+                for _ in 0..((n as usize) / (width * height)) {
+                    let ray = gen_ray_c(&my_camera, &mut rng, x, y, width, height);
+                    let val = sample(&my_scene, ray, &mut rng);
+                    buffer[width * y + x] += val;
+                }
+            }
+            if y % 100 == 0 {
                 print!(".");
                 io::stdout().flush().unwrap();
             }
@@ -57,7 +59,6 @@ pub fn render(scene: Arc<scene::Scene>, camera: Arc<scene::Camera>, width: usize
     let mut img_buffer = vec![0; width * height * 4];
     let mut i = 0;
     for val in accumulator {
-        //println!("Value: {}", val);
         let img_val = (val * factor) as u8;
         img_buffer[i] = img_val;
         img_buffer[i+1] = img_val;
@@ -66,7 +67,6 @@ pub fn render(scene: Arc<scene::Scene>, camera: Arc<scene::Camera>, width: usize
         i += 4;
     }
 
-    println!("\r100%");
     return img_buffer;
 }
 
@@ -127,20 +127,21 @@ fn shoot_ray<'a>(scene: &'a scene::Scene, ray: &Ray) -> Option<(&'a scene::Objec
     return closest_intersection;
 }
 
-fn gen_ray_c(cam: &scene::Camera, rng: &mut XorShiftRng) -> (f64, f64, Ray) {
+fn gen_ray_c(cam: &scene::Camera, rng: &mut XorShiftRng, x: usize, y: usize, width: usize, height: usize) -> Ray {
     let origin = cam.look_from;
     let p_orig = translate(origin, cam.direction);
     let left = cross(cam.up, cam.direction);
     let lr_range = (cam.fov / 2.0).tan();
     let ud_range = lr_range / cam.aspect;
-    let param_x = 2.0 * rng.gen::<f64>();
+
+    let param_x = 2.0 * ((x as f64 / width as f64) + (1. / width as f64) * rng.gen::<f64>());
+    let param_y = 2.0 * ((y as f64 / height as f64) + (1. / height as f64) * rng.gen::<f64>());
+
     let p_x = lr_range * (-1.0 + param_x);
-    //println!{"p_x {}", p_x};
-    let param_y = 2.0 * rng.gen::<f64>();
     // Screen y goes from top to bottom
     let p_y = ud_range * (1.0 - param_y);
-    //println!{"p_y {}", p_y};
+
     let p_disp = p_y * cam.up + p_x * left;
     let through = translate(p_orig, p_disp);
-    (param_x / 2.0, param_y / 2.0, Ray::create(origin, through))
+    Ray::create(origin, through)
 }
