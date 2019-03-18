@@ -50,8 +50,8 @@ fn main() {
     let total = start.to(end);
     println!("Time: {} ms", total.num_milliseconds());
     println!(
-        "Rays per second: {}",
-        1000 * N_RAYS / total.num_milliseconds()
+        "Rays per ms: {}",
+        N_RAYS / total.num_milliseconds()
     );
     image::save_buffer(
         &Path::new("image.png"),

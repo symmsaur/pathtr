@@ -16,6 +16,7 @@ fn start_render_thread(
     scene: &Arc<scene::Scene>,
     camera: &Arc<scene::Camera>,
     tx: &mpsc::Sender<Vec<f64>>,
+    tx_progress: &mpsc::Sender<i64>,
     width: usize,
     height: usize,
     n: i64,
@@ -23,6 +24,7 @@ fn start_render_thread(
     let my_scene = Arc::clone(&scene);
     let my_camera = Arc::clone(&camera);
     let my_tx = mpsc::Sender::clone(&tx);
+    let my_tx_progress = mpsc::Sender::clone(&tx_progress);
     thread::spawn(move || {
         let mut buffer = vec![0.0; width * height];
         let mut rng = rand::XorShiftRng::new_unseeded();
@@ -34,10 +36,7 @@ fn start_render_thread(
                     buffer[width * y + x] += val;
                 }
             }
-            if y % 100 == 0 {
-                print!(".");
-                io::stdout().flush().unwrap();
-            }
+            my_tx_progress.send(n / height as i64).unwrap();
         }
         my_tx.send(buffer).unwrap();
     });
@@ -51,13 +50,23 @@ pub fn render(
     n: i64,
 ) -> Vec<u8> {
     let (tx, rx) = mpsc::channel();
+    let (tx_progress, rx_progress) = mpsc::channel();
     println!("Running on {} cores", THREADS);
     println!("Total {} rays", n);
     for _i in 0..THREADS {
-        start_render_thread(&scene, &camera, &tx, width, height, n / THREADS);
+        start_render_thread(&scene, &camera, &tx, &tx_progress, width, height, n / THREADS);
     }
 
     drop(tx);
+    drop(tx_progress);
+
+    let mut accumulated_samples = 0;
+    for delta_n in rx_progress {
+        accumulated_samples += delta_n;
+        print!("\r{:.2}%", 100. * accumulated_samples as f64/ n as f64);
+        io::stdout().flush().unwrap();
+    }
+    println!();
 
     let mut accumulator = vec![0.0; width * height];
     for buffer in rx {
