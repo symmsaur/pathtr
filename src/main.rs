@@ -127,7 +127,7 @@ fn prep_scene() -> scene::Scene {
         },
         radius: 0.7,
     };
-    let m4 = material::Material::create(0.1, 1.3, 0.9);
+    let m4 = material::Material::create(0.0, 1.5, 1.0);
     let obj4 = scene::Object {
         shape: Box::new(p4),
         material: m4,

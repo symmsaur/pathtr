@@ -37,22 +37,19 @@ impl Material {
         assert!(!incoming_direction.x.is_nan());
         assert!(!incoming_direction.y.is_nan());
         assert!(!incoming_direction.z.is_nan());
-        //println!("new_ray");
         let cos_theta = -dot(incoming_direction, normal);
         if rng.gen::<f64>() < reflection_coefficient(ray.ior, self.ior, cos_theta) {
-            //println!("reflection");
             ElRay {
                 ray: Ray {
                     origin: point,
-                    direction: incoming_direction + 2. * cos_theta * normal,
+                    direction: reflection(incoming_direction, normal),
                 },
                 light: ray.light,
                 ior: ray.ior,
                 count: ray.count + 1,
             }
         } else if self.transparency > 0. && rng.gen::<f64>() < self.transparency {
-            //println!("refraction");
-            ElRay {
+            let mut new_ray = ElRay {
                 ray: Ray {
                     origin: point,
                     direction: refraction(ray.ior, self.ior, incoming_direction, normal),
@@ -60,9 +57,11 @@ impl Material {
                 light: ray.light,
                 ior: self.ior,
                 count: ray.count + 1,
-            }
+            };
+            new_ray.ray.origin = translate(new_ray.ray.origin, 1e-8 * new_ray.ray.direction);
+            new_ray
+
         } else {
-            //println!("diffuse");
             ElRay {
                 ray: gen_ray_n(point, normal, &mut rng),
                 light: self.diffuse * ray.light,
@@ -75,15 +74,20 @@ impl Material {
 
 fn refraction(in_ior: f64, out_ior: f64, in_direction: Vector, normal: Vector) -> Vector {
     let r = in_ior / out_ior;
-    let c = -dot(normal, in_direction);
-    let a = 1. - r * r * (1. - c * c);
-    if a < 0. {
+    let cos_theta = -dot(normal, in_direction);
+    let sin2_theta = r * r * (1.0 - cos_theta * cos_theta);
+    if sin2_theta > 1.0 {
         // Total reflection
-        -in_direction
+        reflection(in_direction, normal)
     } else {
         // Refraction
-        r * in_direction + (r * c - f64::sqrt(a)) * normal
+        (r * in_direction + (r * cos_theta - f64::sqrt(1.0 - sin2_theta)) * normal)
     }
+}
+
+fn reflection(direction: Vector, normal: Vector) -> Vector {
+    let cos_theta = -dot(direction, normal);
+    (direction + 2. * cos_theta * normal)
 }
 
 #[cfg(test)]
@@ -158,7 +162,7 @@ mod tests {
             z: 0.,
         };
         let res = refraction(1.5, 1.0, in_direction, normal);
-        assert_eq!(-in_direction.x, res.x);
+        assert!(-in_direction.x - res.x < 1e-9);
         //assert!(res.y < in_direction.y);
     }
 }
@@ -180,12 +184,12 @@ fn gen_ray_n(start: Point, normal: Vector, rng: &mut XorShiftRng) -> Ray {
             if dot(v, normal) > 0.0 {
                 return Ray {
                     origin: start,
-                    direction: v,
+                    direction: v.normalize(),
                 };
             } else {
                 return Ray {
                     origin: start,
-                    direction: -v,
+                    direction: -v.normalize(),
                 };
             }
         }
