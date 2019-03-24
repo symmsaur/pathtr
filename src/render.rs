@@ -110,7 +110,7 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> f64 
     };
     //println!("new sample");
     loop {
-        assert!(f64::abs(ray.ray.direction.square_length() - 1.0) < 1e-10);
+        //assert!(f64::abs(ray.ray.direction.square_length() - 1.0) < 1e-10);
         match shoot_ray(&scene, &ray.ray) {
             Some((o, p, n, _)) => {
                 ray = o.material.new_ray(ray, p, n, rng);
@@ -120,7 +120,7 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> f64 
             }
         }
         if ray.count > 100 {
-            return 10.0;
+            return ray.light;
         }
         if ray.light < 1e-2 {
             return 0.0;

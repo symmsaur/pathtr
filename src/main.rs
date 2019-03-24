@@ -11,21 +11,21 @@ use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
 
-const WIDTH: usize = 1000;
-const HEIGHT: usize = 1000;
-const N_RAYS: i64 = (WIDTH * HEIGHT * 100) as i64;
+const WIDTH: usize = 2000;
+const HEIGHT: usize = 2000;
+const N_RAYS: i64 = (WIDTH * HEIGHT * 10000) as i64;
 
 fn main() {
     let camera = Arc::new(scene::Camera {
         look_from: Point {
-            x: -12.0,
-            y: -8.0,
-            z: 3.0,
+            x: -10.0,
+            y: -10.0,
+            z: 4.0,
         },
         direction: (Vector {
             x: 10.0,
-            y: 6.75,
-            z: -2.0,
+            y: 9.15,
+            z: -2.8,
         })
         .normalize(),
         up: Vector {
@@ -33,7 +33,7 @@ fn main() {
             y: 0.0,
             z: 1.0,
         },
-        fov: 3.14 / 8.0,
+        fov: 3.14 / 11.0,
         aspect: 1.0,
     });
 
@@ -108,9 +108,9 @@ fn prep_scene() -> scene::Scene {
         center: Point {
             x: 1.0,
             y: -1.0,
-            z: 1.0,
+            z: 0.9,
         },
-        radius: 1.0,
+        radius: 0.9,
     };
     let m3 = material::Material::create(0.5, 1.0, 0.0);
     let obj3 = scene::Object {
@@ -133,7 +133,6 @@ fn prep_scene() -> scene::Scene {
         material: m4,
     };
     scene.objs.push(obj4);
-    // let p3 =     // scene.objs.push(Box::new(p3));
 
     let p5 = Sphere {
         center: Point {
@@ -143,7 +142,7 @@ fn prep_scene() -> scene::Scene {
         },
         radius: 1.0,
     };
-    let m5 = material::Material::create(0.5, 1.5, 0.0);
+    let m5 = material::Material::create(0.5, 1.3, 0.0);
     let obj5 = scene::Object {
         shape: Box::new(p5),
         material: m5,
