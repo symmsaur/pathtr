@@ -77,21 +77,12 @@ fn refraction(in_ior: f64, out_ior: f64, in_direction: Vector, normal: Vector) -
     let r = in_ior / out_ior;
     let c = -dot(normal, in_direction);
     let a = 1. - r * r * (1. - c * c);
-    let refracted = if a < 0. {
-        // Total reflection perhaps?
-        //println!("Total reflection1");
+    if a < 0. {
+        // Total reflection
         -in_direction
     } else {
+        // Refraction
         r * in_direction + (r * c - f64::sqrt(a)) * normal
-    };
-
-    if dot(refracted, normal) < 0. {
-        //println!("Refarcted");
-        refracted
-    } else {
-        // Total reflection
-        println!("Total reflection");
-        -refracted
     }
 }
 
@@ -159,7 +150,7 @@ mod tests {
             x: 1.,
             y: 1.,
             z: 0.,
-        })
+       })
         .normalize();
         let normal = Vector {
             x: -1.,
