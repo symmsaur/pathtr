@@ -1,24 +1,79 @@
 extern crate rand;
 
+use std::ops::Mul;
+use std::ops::Add;
+use std::ops::AddAssign;
+
 use material::rand::{Rng, XorShiftRng};
 
 use math::*;
 
+#[derive(Copy, Clone)]
+pub struct Color {
+    pub red: f64,
+    pub green: f64,
+    pub blue: f64,
+}
+
+impl Mul for Color {
+    type Output = Color;
+    fn mul(self, rhs: Color) -> Color {
+        Color {
+            red: self.red * rhs.red,
+            green: self.green * rhs.green,
+            blue: self.blue * rhs.blue,
+        }
+    }
+}
+
+impl Mul<f64> for Color {
+    type Output = Color;
+    fn mul(self, rhs: f64) -> Color {
+        Color {
+            red: self.red * rhs,
+            green: self.green * rhs,
+            blue: self.blue * rhs,
+        }
+    }
+}
+
+impl Add for Color {
+    type Output = Color;
+    fn add(self, rhs: Color) -> Color {
+        Color {
+            red: self.red + rhs.red,
+            green: self.green + rhs.green,
+            blue: self.blue + rhs.blue,
+        }
+    }
+}
+
+impl AddAssign for Color {
+    fn add_assign(&mut self, rhs: Color) {
+       *self = Color {
+           red: self.red + rhs.red,
+           green: self.green + rhs.green,
+           blue: self.blue + rhs.blue,
+       }
+    }
+}
+
+
 pub struct Material {
-    diffuse: f64,
+    diffuse: Color,
     ior: f64,
     transparency: f64,
 }
 
 pub struct ElRay {
     pub ray: Ray,
-    pub light: f64,
+    pub light: Color,
     pub ior: f64,
     pub count: i32,
 }
 
 impl Material {
-    pub fn create(diffuse: f64, ior: f64, transparency: f64) -> Material {
+    pub fn create(diffuse: Color, ior: f64, transparency: f64) -> Material {
         Material {
             diffuse: diffuse,
             ior: ior,

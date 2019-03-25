@@ -10,12 +10,12 @@ use material;
 use math::*;
 use scene;
 
-const THREADS: i64 = 4;
+const THREADS: i64 = 3;
 
 fn start_render_thread(
     scene: &Arc<scene::Scene>,
     camera: &Arc<scene::Camera>,
-    tx: &mpsc::Sender<Vec<f64>>,
+    tx: &mpsc::Sender<Vec<material::Color>>,
     tx_progress: &mpsc::Sender<i64>,
     width: usize,
     height: usize,
@@ -26,7 +26,7 @@ fn start_render_thread(
     let my_tx = mpsc::Sender::clone(&tx);
     let my_tx_progress = mpsc::Sender::clone(&tx_progress);
     thread::spawn(move || {
-        let mut buffer = vec![0.0; width * height];
+        let mut buffer = vec![material::Color{red: 0.0, green: 0.0, blue:0.0}; width * height];
         let mut rng = rand::XorShiftRng::new_unseeded();
         for y in 0..height {
             for x in 0..width {
@@ -68,10 +68,10 @@ pub fn render(
     }
     println!();
 
-    let mut accumulator = vec![0.0; width * height];
+    let mut accumulator = vec![material::Color{red: 0.0, green: 0.0, blue:0.0}; width * height];
     for buffer in rx {
         for (i, val) in buffer.iter().enumerate() {
-            accumulator[i] += val;
+            accumulator[i] += *val;
         }
     }
 
@@ -80,10 +80,9 @@ pub fn render(
     let mut img_buffer = vec![0; width * height * 4];
     let mut i = 0;
     for val in accumulator {
-        let img_val = (val * factor) as u8;
-        img_buffer[i] = img_val;
-        img_buffer[i + 1] = img_val;
-        img_buffer[i + 2] = img_val;
+        img_buffer[i] = (val.red * factor) as u8;
+        img_buffer[i + 1] = (val.green * factor) as u8;
+        img_buffer[i + 2] = (val.blue * factor) as u8;
         img_buffer[i + 3] = 255;
         i += 4;
     }
@@ -91,20 +90,26 @@ pub fn render(
     return img_buffer;
 }
 
-fn compute_gain(buffer: &Vec<f64>) -> f64 {
+fn compute_gain(buffer: &Vec<material::Color>) -> f64 {
     let mut max = 0.;
     for &val in buffer {
-        if val > max {
-            max = val
+        if val.red > max {
+            max = val.red;
+        }
+        if val.green > max {
+            max = val.green;
+        }
+        if val.blue > max {
+            max = val.blue;
         }
     }
-    return 255. * 1. / max;
+    return 255./ max;
 }
 
-fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> f64 {
+fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> material::Color {
     let mut ray = material::ElRay {
         ray: initial_ray,
-        light: 1.,
+        light: material::Color {red: 1.0, green: 1.0, blue: 1.0},
         ior: 1.,
         count: 0,
     };
@@ -121,9 +126,6 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> f64 
         }
         if ray.count > 100 {
             return ray.light;
-        }
-        if ray.light < 1e-2 {
-            return 0.0;
         }
     }
 }

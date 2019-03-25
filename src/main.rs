@@ -65,6 +65,7 @@ fn main() {
 
 fn prep_scene() -> scene::Scene {
     let mut scene = scene::Scene::new();
+    let white = material::Color {red: 1.0, green: 1.0, blue: 1.0};
 
     let p1 = Plane {
         point: Point {
@@ -78,7 +79,7 @@ fn prep_scene() -> scene::Scene {
             z: 1.0,
         },
     };
-    let m1 = material::Material::create(0.5, 1.0, 0.0);
+    let m1 = material::Material::create(white * 0.8, 1.0, 0.0);
     let obj1 = scene::Object {
         shape: Box::new(p1),
         material: m1,
@@ -97,7 +98,7 @@ fn prep_scene() -> scene::Scene {
             z: 0.0,
         },
     };
-    let m2 = material::Material::create(0.2, 1.0, 0.0);
+    let m2 = material::Material::create(white * 0.8, 1.0, 0.0);
     let obj2 = scene::Object {
         shape: Box::new(p2),
         material: m2,
@@ -112,7 +113,7 @@ fn prep_scene() -> scene::Scene {
         },
         radius: 0.9,
     };
-    let m3 = material::Material::create(0.5, 1.0, 0.0);
+    let m3 = material::Material::create(material::Color {red: 0.2, green: 0.2, blue: 0.8},  1.2, 0.0);
     let obj3 = scene::Object {
         shape: Box::new(p3),
         material: m3,
@@ -127,7 +128,7 @@ fn prep_scene() -> scene::Scene {
         },
         radius: 0.7,
     };
-    let m4 = material::Material::create(0.0, 1.5, 1.0);
+    let m4 = material::Material::create(white * 0.0, 1.5, 1.0);
     let obj4 = scene::Object {
         shape: Box::new(p4),
         material: m4,
@@ -142,7 +143,7 @@ fn prep_scene() -> scene::Scene {
         },
         radius: 1.0,
     };
-    let m5 = material::Material::create(0.5, 1.3, 0.0);
+    let m5 = material::Material::create(material::Color {red: 0.8, green: 0.2, blue: 0.2}, 1.3, 0.0);
     let obj5 = scene::Object {
         shape: Box::new(p5),
         material: m5,
