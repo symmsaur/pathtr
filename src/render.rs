@@ -1,31 +1,32 @@
-extern crate rand;
+extern crate rand_xorshift;
+extern crate threadpool;
 
-use render::rand::{Rng, XorShiftRng};
+use rand::prelude::*;
+use render::rand_xorshift::XorShiftRng;
 
 use std::io::{self, Write};
 use std::sync::{mpsc, Arc};
-use std::thread;
 
 use material;
 use math::*;
+use preview;
 use scene;
 
 const THREADS: i64 = 4;
 
-fn start_render_thread(
+fn start_render_job(
+    pool: &threadpool::ThreadPool,
     scene: &Arc<scene::Scene>,
     camera: &Arc<scene::Camera>,
     tx: &mpsc::Sender<Vec<material::Color>>,
-    tx_progress: &mpsc::Sender<i64>,
     width: usize,
     height: usize,
-    n: i64,
+    rays_per_pixel: i64,
 ) {
     let my_scene = Arc::clone(&scene);
     let my_camera = Arc::clone(&camera);
     let my_tx = mpsc::Sender::clone(&tx);
-    let my_tx_progress = mpsc::Sender::clone(&tx_progress);
-    thread::spawn(move || {
+    pool.execute(move || {
         let mut buffer = vec![
             material::Color {
                 red: 0.0,
@@ -34,54 +35,46 @@ fn start_render_thread(
             };
             width * height
         ];
-        let mut rng = rand::XorShiftRng::new_unseeded();
+        let mut rng = rand_xorshift::XorShiftRng::from_entropy();
         for y in 0..height {
             for x in 0..width {
-                for _ in 0..((n as usize) / (width * height)) {
+                for _ in 0..rays_per_pixel {
                     let ray = gen_ray_c(&my_camera, &mut rng, x, y, width, height);
                     let val = sample(&my_scene, ray, &mut rng);
                     buffer[width * y + x] += val;
                 }
             }
-            my_tx_progress.send(n / height as i64).unwrap();
         }
+        // TODO: After shut down avoid failing here.
         my_tx.send(buffer).unwrap();
     });
 }
 
 pub fn render(
+    preview_window: &preview::Preview,
     scene: Arc<scene::Scene>,
     camera: Arc<scene::Camera>,
     width: usize,
     height: usize,
-    n: i64,
+    rays_per_pixel: i64,
 ) -> Vec<u8> {
+    let num_jobs = rays_per_pixel;
     let (tx, rx) = mpsc::channel();
-    let (tx_progress, rx_progress) = mpsc::channel();
+    let pool = threadpool::ThreadPool::new(THREADS as usize);
     println!("Running on {} cores", THREADS);
-    println!("Total {} rays", n);
-    for _i in 0..THREADS {
-        start_render_thread(
+    println!("Spawining {} jobs", num_jobs);
+    for _i in 0..num_jobs {
+        start_render_job(
+            &pool,
             &scene,
             &camera,
             &tx,
-            &tx_progress,
             width,
             height,
-            n / THREADS,
+            rays_per_pixel / num_jobs,
         );
     }
-
     drop(tx);
-    drop(tx_progress);
-
-    let mut accumulated_samples = 0;
-    for delta_n in rx_progress {
-        accumulated_samples += delta_n;
-        print!("\r{:.2}%", 100. * accumulated_samples as f64 / n as f64);
-        io::stdout().flush().unwrap();
-    }
-    println!();
 
     let mut accumulator = vec![
         material::Color {
@@ -91,25 +84,38 @@ pub fn render(
         };
         width * height
     ];
+    let mut img_buffer = vec![0; width * height * 4];
+    let mut finished_jobs = 0;
     for buffer in rx {
+        finished_jobs += 1;
+        print!("\r{:.2}%", 100. * finished_jobs as f64 / num_jobs as f64);
+        io::stdout().flush().unwrap();
         for (i, val) in buffer.iter().enumerate() {
             accumulator[i] += *val;
         }
+        let factor = compute_gain(&accumulator);
+
+        let mut i = 0;
+        for val in accumulator.iter() {
+            img_buffer[i] = (val.red * factor) as u8;
+            img_buffer[i + 1] = (val.green * factor) as u8;
+            img_buffer[i + 2] = (val.blue * factor) as u8;
+            img_buffer[i + 3] = 255;
+            i += 4;
+        }
+
+        let res = preview_window.submit_image(&img_buffer);
+        match res {
+            Err(_) => {
+                println!();
+                println!("Stopped, outputting image...");
+                break;
+            }
+            _ => {}
+        }
     }
-
-    let factor = compute_gain(&accumulator);
-
-    let mut img_buffer = vec![0; width * height * 4];
-    let mut i = 0;
-    for val in accumulator {
-        img_buffer[i] = (val.red * factor) as u8;
-        img_buffer[i + 1] = (val.green * factor) as u8;
-        img_buffer[i + 2] = (val.blue * factor) as u8;
-        img_buffer[i + 3] = 255;
-        i += 4;
-    }
-
-    return img_buffer;
+    println!();
+    img_buffer
 }
 
 fn compute_gain(buffer: &Vec<material::Color>) -> f64 {
@@ -140,9 +146,7 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> mate
         count: 0,
         done: false,
     };
-    //println!("new sample");
     loop {
-        //assert!(f64::abs(ray.ray.direction.square_length() - 1.0) < 1e-10);
         match shoot_ray(&scene, &ray.ray) {
             Some((o, p, n, _)) => {
                 ray = o.material.new_ray(ray, p, n, rng);

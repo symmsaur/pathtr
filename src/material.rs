@@ -1,10 +1,8 @@
-extern crate rand;
-
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Mul;
 
-use material::rand::{Rng, XorShiftRng};
+use rand::Rng;
 
 use math::*;
 
@@ -101,12 +99,12 @@ impl Material {
         }
     }
 
-    pub fn new_ray(
+    pub fn new_ray<R: Rng + ?Sized>(
         &self,
         ray: ElRay,
         point: Point,
         normal: Vector,
-        mut rng: &mut XorShiftRng,
+        mut rng: &mut R,
     ) -> ElRay {
         let incoming_direction = ray.ray.direction;
         // assert!(!incoming_direction.x.is_nan());
@@ -261,7 +259,7 @@ fn reflection_coefficient(in_ior: f64, out_ior: f64, cos_theta: f64) -> f64 {
     return r0 + (1. - r0) * f64::powi(1. - cos_theta, 5);
 }
 
-fn gen_ray_n(start: Point, normal: Vector, rng: &mut XorShiftRng) -> Ray {
+fn gen_ray_n<R: Rng + ?Sized>(start: Point, normal: Vector, rng: &mut R) -> Ray {
     // uniform sample over half sphere
     loop {
         let x = 2.0 * rng.gen::<f64>() - 1.0;
