@@ -14,16 +14,16 @@ use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
 
-const WIDTH: usize = 1000;
-const HEIGHT: usize = 1000;
-const RAYS_PER_PIXEL: i64 = 1000;
+const WIDTH: usize = 1920;
+const HEIGHT: usize = 1200;
+const RAYS_PER_PIXEL: i64 = 5000;
 
 fn main() {
     let camera = Arc::new(scene::Camera {
         look_from: Point {
-            x: -10.0,
-            y: -10.0,
-            z: 4.0,
+            x: -12.0,
+            y: -12.0,
+            z: 4.8,
         },
         direction: (Vector {
             x: 10.0,
@@ -36,8 +36,8 @@ fn main() {
             y: 0.0,
             z: 1.0,
         },
-        fov: 3.14 / 11.0,
-        aspect: 1.0,
+        fov: 3.14 / 8.0,
+        aspect: 1.6,
     });
     let scene = Arc::new(prep_scene());
 
@@ -132,9 +132,9 @@ fn prep_scene() -> scene::Scene {
     };
     let m3 = material::Material::create(
         material::Color {
-            red: 0.2,
-            green: 0.2,
-            blue: 0.8,
+            red: 0.3,
+            green: 0.3,
+            blue: 0.7,
         },
         1.2,
         0.0,
@@ -144,6 +144,17 @@ fn prep_scene() -> scene::Scene {
         material: m3,
     };
     scene.objs.push(obj3);
+    scene.objs.push(scene::Object {
+        shape: Box::new(Sphere {
+            center: Point {
+                x: 1.0,
+                y: -1.0,
+                z: 2.25,
+            },
+            radius: 0.45,
+        }),
+        material: material::Material::create(white * 0.0, 1.5, 1.0),
+    });
 
     let p4 = Sphere {
         center: Point {
@@ -170,8 +181,8 @@ fn prep_scene() -> scene::Scene {
     };
     let m5 = material::Material::create(
         material::Color {
-            red: 0.8,
-            green: 0.2,
+            red: 0.7,
+            green: 0.3,
             blue: 0.2,
         },
         1.3,
@@ -182,5 +193,54 @@ fn prep_scene() -> scene::Scene {
         material: m5,
     };
     scene.objs.push(obj5);
+    scene.objs.push(scene::Object {
+        shape: Box::new(Sphere {
+            center: Point {
+                x: 1.0,
+                y: 1.0,
+                z: 2.5,
+            },
+            radius: 0.5,
+        }),
+        material: material::Material::create(white * 0.0, 1.5, 1.0),
+    });
+
+    // Lights
+    scene.objs.push(scene::Object {
+        shape: Box::new(Sphere {
+            center: Point {
+                x: 20.3,
+                y: -20.0,
+                z: 20.35,
+            },
+            radius: 5.0,
+        }),
+        material: material::Material::create_emissive(white * 5.0),
+    });
+
+    scene.objs.push(scene::Object {
+        shape: Box::new(Sphere {
+            center: Point {
+                x: 0.0,
+                y: -30.0,
+                z: 20.35,
+            },
+            radius: 5.0,
+        }),
+        material: material::Material::create_emissive(white * 9.0),
+    });
+
+    scene.objs.push(scene::Object {
+        shape: Box::new(Sphere {
+            center: Point {
+                x: -20.0,
+                y: -5.0,
+                z: 10.35,
+            },
+            radius: 4.0,
+        }),
+        material: material::Material::create_emissive(white * 7.0),
+    });
+
     return scene;
 }

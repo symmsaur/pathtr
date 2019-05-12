@@ -58,7 +58,7 @@ pub fn render(
     height: usize,
     rays_per_pixel: i64,
 ) -> Vec<u8> {
-    let num_jobs = rays_per_pixel;
+    let num_jobs = rays_per_pixel / 10;
     let (tx, rx) = mpsc::channel();
     let pool = threadpool::ThreadPool::new(THREADS as usize);
     println!("Running on {} cores", THREADS);
@@ -97,7 +97,7 @@ pub fn render(
 
         let mut i = 0;
         for val in accumulator.iter() {
-            img_buffer[i] = (val.red * factor) as u8;
+            img_buffer[i + 0] = (val.red * factor) as u8;
             img_buffer[i + 1] = (val.green * factor) as u8;
             img_buffer[i + 2] = (val.blue * factor) as u8;
             img_buffer[i + 3] = 255;

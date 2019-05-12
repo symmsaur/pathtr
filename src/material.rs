@@ -107,9 +107,6 @@ impl Material {
         mut rng: &mut R,
     ) -> ElRay {
         let incoming_direction = ray.ray.direction;
-        // assert!(!incoming_direction.x.is_nan());
-        // assert!(!incoming_direction.y.is_nan());
-        // assert!(!incoming_direction.z.is_nan());
         let cos_theta = -dot(incoming_direction, normal);
         if self.emissive.red != 0.0 || self.emissive.blue != 0.0 || self.emissive.green != 0.0 {
             ElRay {
