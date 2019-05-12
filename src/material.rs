@@ -1,8 +1,8 @@
 extern crate rand;
 
-use std::ops::Mul;
 use std::ops::Add;
 use std::ops::AddAssign;
+use std::ops::Mul;
 
 use material::rand::{Rng, XorShiftRng};
 
@@ -50,17 +50,18 @@ impl Add for Color {
 
 impl AddAssign for Color {
     fn add_assign(&mut self, rhs: Color) {
-       *self = Color {
-           red: self.red + rhs.red,
-           green: self.green + rhs.green,
-           blue: self.blue + rhs.blue,
-       }
+        *self = Color {
+            red: self.red + rhs.red,
+            green: self.green + rhs.green,
+            blue: self.blue + rhs.blue,
+        }
     }
 }
 
-
 pub struct Material {
     diffuse: Color,
+    // Emissivity takes priority
+    emissive: Color,
     ior: f64,
     transparency: f64,
 }
@@ -70,6 +71,7 @@ pub struct ElRay {
     pub light: Color,
     pub ior: f64,
     pub count: i32,
+    pub done: bool,
 }
 
 impl Material {
@@ -78,6 +80,24 @@ impl Material {
             diffuse: diffuse,
             ior: ior,
             transparency: transparency,
+            emissive: Color {
+                red: 0.0,
+                green: 0.0,
+                blue: 0.0,
+            },
+        }
+    }
+
+    pub fn create_emissive(emissive: Color) -> Material {
+        Material {
+            diffuse: Color {
+                red: 0.0,
+                green: 0.0,
+                blue: 0.0,
+            },
+            ior: 1.0,
+            transparency: 0.0,
+            emissive: emissive,
         }
     }
 
@@ -93,7 +113,18 @@ impl Material {
         // assert!(!incoming_direction.y.is_nan());
         // assert!(!incoming_direction.z.is_nan());
         let cos_theta = -dot(incoming_direction, normal);
-        if rng.gen::<f64>() < reflection_coefficient(ray.ior, self.ior, cos_theta) {
+        if self.emissive.red != 0.0 || self.emissive.blue != 0.0 || self.emissive.green != 0.0 {
+            ElRay {
+                ray: Ray {
+                    origin: point,
+                    direction: normal,
+                },
+                light: ray.light * self.emissive,
+                ior: ray.ior,
+                count: ray.count + 1,
+                done: true,
+            }
+        } else if rng.gen::<f64>() < reflection_coefficient(ray.ior, self.ior, cos_theta) {
             ElRay {
                 ray: Ray {
                     origin: point,
@@ -102,6 +133,7 @@ impl Material {
                 light: ray.light,
                 ior: ray.ior,
                 count: ray.count + 1,
+                done: false,
             }
         } else if self.transparency > 0. && rng.gen::<f64>() < self.transparency {
             let mut new_ray = ElRay {
@@ -112,16 +144,17 @@ impl Material {
                 light: ray.light,
                 ior: self.ior,
                 count: ray.count + 1,
+                done: false,
             };
             new_ray.ray.origin = translate(new_ray.ray.origin, 1e-8 * new_ray.ray.direction);
             new_ray
-
         } else {
             ElRay {
                 ray: gen_ray_n(point, normal, &mut rng),
                 light: self.diffuse * ray.light,
                 ior: ray.ior,
                 count: ray.count + 1,
+                done: false,
             }
         }
     }
@@ -209,7 +242,7 @@ mod tests {
             x: 1.,
             y: 1.,
             z: 0.,
-       })
+        })
         .normalize();
         let normal = Vector {
             x: -1.,
