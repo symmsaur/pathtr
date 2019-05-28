@@ -58,7 +58,7 @@ pub fn render(
     height: usize,
     rays_per_pixel: i64,
 ) -> Vec<u8> {
-    let num_jobs = rays_per_pixel / 10;
+    let num_jobs = rays_per_pixel;// / 10;
     let (tx, rx) = mpsc::channel();
     let pool = threadpool::ThreadPool::new(THREADS as usize);
     println!("Running on {} cores", THREADS);
@@ -148,8 +148,8 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> mate
     };
     loop {
         match shoot_ray(&scene, &ray.ray) {
-            Some((o, p, n, _)) => {
-                ray = o.material.new_ray(ray, p, n, rng);
+            Some((o, p, n, _, i)) => {
+                ray = o.material.new_ray(ray, p, n, i, rng);
             }
             None => {
                 return ray.light;
@@ -164,19 +164,19 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> mate
 fn shoot_ray<'a>(
     scene: &'a scene::Scene,
     ray: &Ray,
-) -> Option<(&'a scene::Object, Point, Vector, f64)> {
-    let mut closest_intersection: Option<(&'a scene::Object, Point, Vector, f64)> = None;
+) -> Option<(&'a scene::Object, Point, Vector, f64, bool)> {
+    let mut closest_intersection: Option<(&'a scene::Object, Point, Vector, f64, bool)> = None;
     for obj in scene.objs.iter() {
         let new_intersection = obj.shape.intersect(&ray);
         match new_intersection {
-            Some((p, n, t)) => match closest_intersection {
-                Some((_, _, _, t_old)) => {
+            Some((p, n, t, i)) => match closest_intersection {
+                Some((_, _, _, t_old, _)) => {
                     if t < t_old {
-                        closest_intersection = Some((obj, p, n, t));
+                        closest_intersection = Some((obj, p, n, t, i));
                     }
                 }
                 None => {
-                    closest_intersection = Some((obj, p, n, t));
+                    closest_intersection = Some((obj, p, n, t, i));
                 }
             },
             None => {}

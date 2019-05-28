@@ -14,21 +14,21 @@ use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1200;
-const RAYS_PER_PIXEL: i64 = 5000;
+const WIDTH: usize = 640;
+const HEIGHT: usize = 400;
+const RAYS_PER_PIXEL: i64 = 1000;
 
 fn main() {
     let camera = Arc::new(scene::Camera {
         look_from: Point {
             x: -12.0,
-            y: -12.0,
+            y: -10.0,
             z: 4.8,
         },
         direction: (Vector {
             x: 10.0,
             y: 9.15,
-            z: -2.8,
+            z: -1.8,
         })
         .normalize(),
         up: Vector {
@@ -36,9 +36,29 @@ fn main() {
             y: 0.0,
             z: 1.0,
         },
-        fov: 3.14 / 8.0,
+        fov: 3.14 / 3.0,
         aspect: 1.6,
     });
+    // let camera = Arc::new(scene::Camera {
+    //     look_from: Point {
+    //         x: 0.0,
+    //         y: 0.0,
+    //         z: 100.0,
+    //     },
+    //     direction: (Vector {
+    //         x: 0.0,
+    //         y: 0.0,
+    //         z: -1.0,
+    //     })
+    //     .normalize(),
+    //     up: Vector {
+    //         x: 0.0,
+    //         y: 1.0,
+    //         z: 0.0,
+    //     },
+    //     fov: 3.14 / 8.0,
+    //     aspect: 1.6,
+    // });
     let scene = Arc::new(prep_scene());
 
     let width = WIDTH;
@@ -103,24 +123,24 @@ fn prep_scene() -> scene::Scene {
     };
     scene.objs.push(obj1);
 
-    let p2 = Plane {
-        point: Point {
-            x: 0.0,
-            y: 2.0,
-            z: 0.0,
-        },
-        normal: Vector {
-            x: 0.0,
-            y: -1.0,
-            z: 0.0,
-        },
-    };
-    let m2 = material::Material::create(white * 0.8, 1.0, 0.0);
-    let obj2 = scene::Object {
-        shape: Box::new(p2),
-        material: m2,
-    };
-    scene.objs.push(obj2);
+    // let p2 = Plane {
+    //     point: Point {
+    //         x: 0.0,
+    //         y: 2.0,
+    //         z: 0.0,
+    //     },
+    //     normal: Vector {
+    //         x: 0.0,
+    //         y: -1.0,
+    //         z: 0.0,
+    //     },
+    // };
+    // let m2 = material::Material::create(white * 0.8, 1.0, 0.0);
+    // let obj2 = scene::Object {
+    //     shape: Box::new(p2),
+    //     material: m2,
+    // };
+    // scene.objs.push(obj2);
 
     let p3 = Sphere {
         center: Point {
@@ -205,6 +225,66 @@ fn prep_scene() -> scene::Scene {
         material: material::Material::create(white * 0.0, 1.5, 1.0),
     });
 
+    scene.objs.push(scene::Object {
+        shape: Box::new(Sphere {
+            center: Point {
+                x: 10.0,
+                y: 5.0,
+                z: 5.0,
+            },
+            radius: 5.0,
+        }),
+        material: material::Material::create(
+            material::Color {
+                red: 0.05,
+                green: 0.05,
+                blue: 0.05,
+            },
+            1.7,
+            0.0,
+        ),
+    });
+
+    scene.objs.push(scene::Object {
+        shape: Box::new(Sphere {
+            center: Point {
+                x: 5.0,
+                y: 20.0,
+                z: 10.0,
+            },
+            radius: 10.0,
+        }),
+        material: material::Material::create(
+            material::Color {
+                red: 0.05,
+                green: 0.15,
+                blue: 0.05,
+            },
+            1.7,
+            0.0,
+        ),
+    });
+
+    // Lens ball
+    // let look_from = Point {
+    //     x: -12.0,
+    //     y: -12.0,
+    //     z: 4.8,
+    // };
+    // let direction = (Vector {
+    //     x: 10.0,
+    //     y: 9.15,
+    //     z: -2.8,
+    // })
+    // .normalize();
+    // scene.objs.push(scene::Object {
+    //     shape: Box::new(Sphere {
+    //         center: translate(look_from, 8.0 * direction),
+    //         radius: 0.8,
+    //     }),
+    //     material: material::Material::create(white * 0.0, 1.5, 1.0),
+    // });
+
     // Lights
     scene.objs.push(scene::Object {
         shape: Box::new(Sphere {
@@ -215,21 +295,8 @@ fn prep_scene() -> scene::Scene {
             },
             radius: 5.0,
         }),
-        material: material::Material::create_emissive(white * 5.0),
+        material: material::Material::create_emissive(white * 2.0),
     });
-
-    scene.objs.push(scene::Object {
-        shape: Box::new(Sphere {
-            center: Point {
-                x: 0.0,
-                y: -30.0,
-                z: 20.35,
-            },
-            radius: 5.0,
-        }),
-        material: material::Material::create_emissive(white * 9.0),
-    });
-
     scene.objs.push(scene::Object {
         shape: Box::new(Sphere {
             center: Point {
@@ -239,7 +306,7 @@ fn prep_scene() -> scene::Scene {
             },
             radius: 4.0,
         }),
-        material: material::Material::create_emissive(white * 7.0),
+        material: material::Material::create_emissive(white * 1.0),
     });
 
     return scene;

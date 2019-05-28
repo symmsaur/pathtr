@@ -104,6 +104,7 @@ impl Material {
         ray: ElRay,
         point: Point,
         normal: Vector,
+        inside: bool,
         mut rng: &mut R,
     ) -> ElRay {
         let incoming_direction = ray.ray.direction;
@@ -137,7 +138,7 @@ impl Material {
                     direction: refraction(ray.ior, self.ior, incoming_direction, normal),
                 },
                 light: ray.light,
-                ior: self.ior,
+                ior: if inside { 1.0 } else { self.ior },
                 count: ray.count + 1,
                 done: false,
             };

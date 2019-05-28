@@ -4,7 +4,7 @@ use std::ops::Neg;
 use std::ops::Sub;
 
 pub trait Intersectable: Sync + Send {
-    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)>;
+    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64, bool)>;
 }
 
 pub struct Ray {
@@ -151,7 +151,7 @@ pub fn cross(v1: Vector, v2: Vector) -> Vector {
 }
 
 impl Intersectable for Plane {
-    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)> {
+    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64, bool)> {
         let v = -dot(ray.direction, self.normal);
         if v <= 0.0 {
             // The ray is moving away from the plane.
@@ -163,12 +163,12 @@ impl Intersectable for Plane {
             return None;
         }
         let t = d / v;
-        Some((translate(ray.origin, t * ray.direction), self.normal, t))
+        Some((translate(ray.origin, t * ray.direction), self.normal, t, false))
     }
 }
 
 impl Intersectable for Sphere {
-    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64)> {
+    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64, bool)> {
         let b = 2.0 * dot(ray.direction, ray.origin - self.center);
         //println!("b: {}", b);
         let c = (ray.origin - self.center).square_length() - self.radius * self.radius;
@@ -183,14 +183,14 @@ impl Intersectable for Sphere {
         if t1 > 0.0 {
             let intersection = translate(ray.origin, t1 * ray.direction);
             let normal = (intersection - self.center).normalize();
-            return Some((intersection, normal, t1));
+            return Some((intersection, normal, t1, false));
         }
         let t2 = (-b + delta.sqrt()) / 2.0;
         if t2 > 0.0 {
             let intersection = translate(ray.origin, t2 * ray.direction);
             // We are inside the sphere
             let normal = (self.center - intersection).normalize();
-            return Some((intersection, normal, t2));
+            return Some((intersection, normal, t2, true));
         }
         return None;
     }
@@ -380,7 +380,7 @@ mod tests {
             },
             radius: 1.0,
         };
-        let (res, _, _) = sphere.intersect(&ray).unwrap();
+        let (res, _, _, _) = sphere.intersect(&ray).unwrap();
         assert_eq!(-1.0, res.x);
         assert_eq!(0.0, res.y);
         assert_eq!(0.0, res.z);
@@ -408,7 +408,7 @@ mod tests {
             },
             radius: 0.5,
         };
-        let (res, _, _) = sphere.intersect(&ray).unwrap();
+        let (res, _, _, _) = sphere.intersect(&ray).unwrap();
         assert_eq!(0.0, res.x);
         assert_eq!(-0.5, res.y);
         assert_eq!(0.0, res.z);
@@ -436,7 +436,7 @@ mod tests {
             },
             radius: 0.5,
         };
-        let (res, _, t) = sphere.intersect(&ray).unwrap();
+        let (res, _, t, _) = sphere.intersect(&ray).unwrap();
         assert_eq!(1.0, res.x);
         assert_eq!(1.5, res.y);
         assert_eq!(3.0, res.z);
@@ -491,7 +491,7 @@ mod tests {
             },
             radius: 0.5,
         };
-        let (_, normal, _) = sphere.intersect(&ray).unwrap();
+        let (_, normal, _, _) = sphere.intersect(&ray).unwrap();
         assert_eq!(0.0, normal.x);
         assert_eq!(-1.0, normal.y);
         assert_eq!(0.0, normal.z);
@@ -525,7 +525,7 @@ mod tests {
             },
             radius: 0.5,
         };
-        let (_, normal, _) = sphere.intersect(&ray).unwrap();
+        let (_, normal, _, _) = sphere.intersect(&ray).unwrap();
         assert!(almost_eq(-direction.x, normal.x));
         assert!(almost_eq(-direction.y, normal.y));
         assert!(almost_eq(-direction.z, normal.z));
@@ -608,7 +608,7 @@ mod tests {
             },
         };
 
-        let (p, _, _) = plane.intersect(&ray).unwrap();
+        let (p, _, _, _) = plane.intersect(&ray).unwrap();
 
         assert_eq!(2.0, p.y);
         assert_eq!(3.0, p.z);
@@ -643,7 +643,7 @@ mod tests {
             },
         };
 
-        let (p, _, t) = plane.intersect(&ray).unwrap();
+        let (p, _, t, _) = plane.intersect(&ray).unwrap();
 
         assert_eq!(-1.0, p.x);
         assert_eq!(-4.0, p.y);
