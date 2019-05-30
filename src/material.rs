@@ -99,6 +99,74 @@ impl Material {
         }
     }
 
+    pub fn create_glass() -> Material {
+        Material {
+            diffuse: Color {
+                red: 0.0,
+                green: 0.0,
+                blue: 0.0,
+            },
+            ior: 1.5,
+            transparency: 1.0,
+            emissive: Color {
+                red: 0.0,
+                green: 0.0,
+                blue: 0.0,
+            }
+        }
+    }
+
+    pub fn create_colored_1() -> Material {
+        Material {
+            diffuse: Color {
+                red: 0.2,
+                green: 1.0,
+                blue: 1.0,
+            },
+            ior: 1.5,
+            transparency: 0.0,
+            emissive: Color {
+                red: 0.0,
+                green: 0.0,
+                blue: 0.0,
+            }
+        }
+    }
+
+    pub fn create_colored_2() -> Material {
+        Material {
+            diffuse: Color {
+                red: 1.0,
+                green: 0.8,
+                blue: 0.2,
+            },
+            ior: 1.5,
+            transparency: 0.0,
+            emissive: Color {
+                red: 0.0,
+                green: 0.0,
+                blue: 0.0,
+            }
+        }
+    }
+
+    pub fn create_colored_3() -> Material {
+        Material {
+            diffuse: Color {
+                red: 0.9,
+                green: 0.6,
+                blue: 1.0,
+            },
+            ior: 1.5,
+            transparency: 0.0,
+            emissive: Color {
+                red: 0.0,
+                green: 0.0,
+                blue: 0.0,
+            }
+        }
+    }
+
     pub fn new_ray<R: Rng + ?Sized>(
         &self,
         ray: ElRay,

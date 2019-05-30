@@ -58,7 +58,7 @@ pub fn render(
     height: usize,
     rays_per_pixel: i64,
 ) -> Vec<u8> {
-    let num_jobs = rays_per_pixel;// / 10;
+    let num_jobs = rays_per_pixel / 10;
     let (tx, rx) = mpsc::channel();
     let pool = threadpool::ThreadPool::new(THREADS as usize);
     println!("Running on {} cores", THREADS);
@@ -194,19 +194,37 @@ fn gen_ray_c(
     height: usize,
 ) -> Ray {
     let origin = cam.look_from;
+    let right = cross(cam.direction, cam.up).normalize();
+    let down = cross(cam.direction, right).normalize();
+
+    let x_range = (cam.fov / 2.0).tan();
+    let y_range = x_range / cam.aspect;
+    // Goes from -1 to 1
+    let param_x = 2.0 * ((x as f64 / width as f64) + (1. / width as f64) * rng.gen::<f64>()) - 1.0;
+    let param_y = 2.0 * ((y as f64 / height as f64) + (1. / height as f64) * rng.gen::<f64>()) - 1.0;
+
+    let p_x = x_range * param_x;
+    let p_y = y_range * param_y;
+
+    let p_disp = p_y * down + p_x * right;
     let p_orig = translate(origin, cam.direction);
-    let left = cross(cam.up, cam.direction);
-    let lr_range = (cam.fov / 2.0).tan();
-    let ud_range = lr_range / cam.aspect;
+    let through_screen = translate(p_orig, p_disp);
+    let displacement = through_screen - origin;
+    let through = translate(origin, cam.focal_distance * displacement);
 
-    let param_x = 2.0 * ((x as f64 / width as f64) + (1. / width as f64) * rng.gen::<f64>());
-    let param_y = 2.0 * ((y as f64 / height as f64) + (1. / height as f64) * rng.gen::<f64>());
+    // perturb ray
+    let mut perturbation_param_x = 2.0;
+    let mut perturbation_param_y = 2.0;
+    while perturbation_param_x * perturbation_param_x + perturbation_param_y * perturbation_param_y
+        > 1.0
+    {
+        perturbation_param_x = 2.0 * rng.gen::<f64>() - 1.0;
+        perturbation_param_y = 2.0 * rng.gen::<f64>() - 1.0;
+    }
+    let perturbation_x = perturbation_param_x * cam.aperture;
+    let perturbation_y = perturbation_param_y * cam.aperture;
 
-    let p_x = lr_range * (-1.0 + param_x);
-    // Screen y goes from top to bottom
-    let p_y = ud_range * (1.0 - param_y);
+    let perturbed_origin = translate(origin, (perturbation_x * right) + (perturbation_y * down));
 
-    let p_disp = p_y * cam.up + p_x * left;
-    let through = translate(p_orig, p_disp);
-    Ray::create(origin, through)
+    Ray::create(perturbed_origin, through)
 }

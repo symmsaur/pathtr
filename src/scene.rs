@@ -22,4 +22,6 @@ pub struct Camera {
     pub up: Vector,
     pub fov: f64,
     pub aspect: f64,
+    pub aperture: f64,
+    pub focal_distance: f64,
 }
