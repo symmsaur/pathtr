@@ -6,7 +6,7 @@ pub struct Scene {
 }
 
 pub struct Object {
-    pub shape: Box<Intersectable>,
+    pub shape: Box<dyn Intersectable>,
     pub material: Material,
 }
 
