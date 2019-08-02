@@ -80,47 +80,52 @@ enum BoundingBoxTree {
 }
 
 impl BoundingBoxTree {
-    fn add(&mut self, obj: Box<dyn HasBoundingBox>) {
+    fn add(self, obj: Box<dyn HasBoundingBox>) -> BoundingBoxTree {
         match self {
             BoundingBoxTree::Node {
-                bounding_box,
-                left: left @ None,
+                bounding_box: _,
+                left: None,
                 right: None,
-            } => {
-                *bounding_box = obj.get_bounding_box();
-                *left = Some(Box::new(BoundingBoxTree::Leaf { object: obj }));
-            }
+            } => BoundingBoxTree::Node {
+                bounding_box: obj.get_bounding_box(),
+                left: Some(Box::new(BoundingBoxTree::Leaf { object: obj })),
+                right: None,
+            },
             BoundingBoxTree::Node {
                 bounding_box,
-                left: Some(_),
-                right: right @ None,
-            } => {
-                *bounding_box = *bounding_box + obj.get_bounding_box();
-                *right = Some(Box::new(BoundingBoxTree::Leaf { object: obj }));
-            }
+                left: left @ Some(_),
+                right: None,
+            } => BoundingBoxTree::Node {
+                bounding_box: bounding_box + obj.get_bounding_box(),
+                left: left,
+                right: Some(Box::new(BoundingBoxTree::Leaf { object: obj })),
+            },
             BoundingBoxTree::Node {
                 bounding_box,
-                left: Some(obj_l),
-                right: Some(obj_r),
+                left: Some(node_l),
+                right: Some(node_r),
             } => {
                 // This node is full
                 // Put in smaller box
-                *bounding_box = *bounding_box + obj.get_bounding_box();
-                if (obj.get_bounding_box() + obj_l.get_bounding_box()).norm()
-                    < (obj.get_bounding_box() + obj_r.get_bounding_box()).norm()
+                let bounding_box = bounding_box + obj.get_bounding_box();
+                let (node_l, node_r) = if (obj.get_bounding_box() + node_l.get_bounding_box()).norm()
+                    < (obj.get_bounding_box() + node_r.get_bounding_box()).norm()
                 {
-                    obj_l.add(obj);
+                    (Box::new(node_l.add(obj)), node_r)
                 } else {
-                    obj_r.add(obj);
+                    (node_l, Box::new(node_r.add(obj)))
+                };
+                BoundingBoxTree::Node {
+                    bounding_box: bounding_box,
+                    left: Some(node_l),
+                    right: Some(node_r),
                 }
             }
-            BoundingBoxTree::Leaf { object } => {
-                *self = BoundingBoxTree::Node {
-                    bounding_box: object.get_bounding_box() + obj.get_bounding_box(),
-                    left: Some(Box::new(BoundingBoxTree::Leaf {object: *object })),
-                    right: Some(Box::new(BoundingBoxTree::Leaf { object: obj })),
-                }
-            }
+            BoundingBoxTree::Leaf { object } => BoundingBoxTree::Node {
+                bounding_box: object.get_bounding_box() + obj.get_bounding_box(),
+                left: Some(Box::new(BoundingBoxTree::Leaf { object: object })),
+                right: Some(Box::new(BoundingBoxTree::Leaf { object: obj })),
+            },
             _ => {
                 panic!("Invalid tree state");
             }
@@ -212,12 +217,12 @@ mod tests {
 
     #[test]
     fn add_item() {
-        let mut tree = BoundingBoxTree::create_empty();
+        let tree = BoundingBoxTree::create_empty();
         let sphere = Sphere {
             center: Point::origin(),
             radius: 1.0,
         };
-        tree.add(Box::new(sphere.clone()));
+        let tree = tree.add(Box::new(sphere.clone()));
         match tree {
             BoundingBoxTree::Node {
                 bounding_box,
@@ -237,7 +242,7 @@ mod tests {
 
     #[test]
     fn add_2_items() {
-        let mut tree = BoundingBoxTree::create_empty();
+        let tree = BoundingBoxTree::create_empty();
         let sphere1 = Sphere {
             center: Point::origin(),
             radius: 1.0,
@@ -250,8 +255,8 @@ mod tests {
             },
             radius: 1.0,
         };
-        tree.add(Box::new(sphere1.clone()));
-        tree.add(Box::new(sphere2.clone()));
+        let tree = tree.add(Box::new(sphere1.clone()));
+        let tree = tree.add(Box::new(sphere2.clone()));
         match tree {
             BoundingBoxTree::Node {
                 bounding_box,
@@ -270,7 +275,7 @@ mod tests {
 
     #[test]
     fn add_3_items() {
-        let mut tree = BoundingBoxTree::create_empty();
+        let tree = BoundingBoxTree::create_empty();
         let sphere1 = Sphere {
             center: Point::origin(),
             radius: 1.0,
@@ -291,9 +296,9 @@ mod tests {
             },
             radius: 3.0,
         };
-        tree.add(Box::new(sphere1.clone()));
-        tree.add(Box::new(sphere2.clone()));
-        tree.add(Box::new(sphere3.clone()));
+        let tree = tree.add(Box::new(sphere1.clone()));
+        let tree = tree.add(Box::new(sphere2.clone()));
+        let tree = tree.add(Box::new(sphere3.clone()));
         match tree {
             BoundingBoxTree::Node {
                 bounding_box,
