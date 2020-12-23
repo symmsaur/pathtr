@@ -1,16 +1,14 @@
 extern crate rand_xorshift;
-extern crate threadpool;
-
 use rand::prelude::*;
-use render::rand_xorshift::XorShiftRng;
+use rand_xorshift::XorShiftRng;
 
 use std::io::{self, Write};
 use std::sync::{mpsc, Arc};
 
-use material;
-use math::*;
-use preview;
-use scene;
+use crate::material;
+use crate::math::*;
+use crate::preview;
+use crate::scene;
 
 const THREADS: i64 = 4;
 

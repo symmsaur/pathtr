@@ -4,7 +4,7 @@ use std::ops::Mul;
 
 use rand::Rng;
 
-use math::*;
+use crate::math::*;
 
 #[derive(Copy, Clone)]
 pub struct Color {
@@ -233,13 +233,13 @@ fn refraction(in_ior: f64, out_ior: f64, in_direction: Vector, normal: Vector) -
         reflection(in_direction, normal)
     } else {
         // Refraction
-        (r * in_direction + (r * cos_theta - f64::sqrt(1.0 - sin2_theta)) * normal)
+        r * in_direction + (r * cos_theta - f64::sqrt(1.0 - sin2_theta)) * normal
     }
 }
 
 fn reflection(direction: Vector, normal: Vector) -> Vector {
     let cos_theta = -dot(direction, normal);
-    (direction + 2. * cos_theta * normal)
+    direction + 2. * cos_theta * normal
 }
 
 #[cfg(test)]

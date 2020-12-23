@@ -1,5 +1,5 @@
-use material::Material;
-use math::*;
+use crate::material::Material;
+use crate::math::*;
 
 pub struct Scene {
     pub objs: Vec<Object>,
