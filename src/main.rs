@@ -6,7 +6,8 @@ extern crate time;
 mod material;
 mod math;
 mod preview;
-mod render; mod scene;
+mod render;
+mod scene;
 
 use math::*;
 use std::path::Path;
@@ -124,18 +125,72 @@ fn prep_scene() -> scene::Scene {
     };
     scene.objs.push(obj1);
 
-    add_sphere(&mut scene, 0.1, -0.03, 1.0, material::Material::create_colored_1());
-    add_sphere(&mut scene, -1.7, -1.0, 0.7, material::Material::create_colored_2());
-    add_sphere(&mut scene, 2.0, 0.3, 1.0, material::Material::create_glass());
+    add_sphere(
+        &mut scene,
+        0.1,
+        -0.03,
+        1.0,
+        material::Material::create_colored_1(),
+    );
+    add_sphere(
+        &mut scene,
+        -1.7,
+        -1.0,
+        0.7,
+        material::Material::create_colored_2(),
+    );
+    add_sphere(
+        &mut scene,
+        2.0,
+        0.3,
+        1.0,
+        material::Material::create_glass(),
+    );
 
-    add_sphere(&mut scene, -1.0, -3.3, 0.4, material::Material::create_colored_3());
-    add_sphere(&mut scene, 1.2, -3.3, 0.4, material::Material::create_colored_2());
+    add_sphere(
+        &mut scene,
+        -1.0,
+        -3.3,
+        0.4,
+        material::Material::create_colored_3(),
+    );
+    add_sphere(
+        &mut scene,
+        1.2,
+        -3.3,
+        0.4,
+        material::Material::create_colored_2(),
+    );
 
-    add_sphere(&mut scene, 2.2, 5.3, 0.8, material::Material::create_colored_2());
-    add_sphere(&mut scene, -2.0, 4.3, 1.1, material::Material::create_colored_1());
+    add_sphere(
+        &mut scene,
+        2.2,
+        5.3,
+        0.8,
+        material::Material::create_colored_2(),
+    );
+    add_sphere(
+        &mut scene,
+        -2.0,
+        4.3,
+        1.1,
+        material::Material::create_colored_1(),
+    );
 
-    add_sphere(&mut scene, 5.2, 15.3, 1.0, material::Material::create_colored_1());
-    add_sphere(&mut scene, -0.2, 10.3, 1.0, material::Material::create_colored_3());
+    add_sphere(
+        &mut scene,
+        5.2,
+        15.3,
+        1.0,
+        material::Material::create_colored_1(),
+    );
+    add_sphere(
+        &mut scene,
+        -0.2,
+        10.3,
+        1.0,
+        material::Material::create_colored_3(),
+    );
 
     // Lights
     scene.objs.push(scene::Object {
@@ -164,8 +219,7 @@ fn prep_scene() -> scene::Scene {
     return scene;
 }
 
-fn add_sphere(scene: &mut scene::Scene, x: f64, y: f64, radius: f64, material: material::Material)
-{
+fn add_sphere(scene: &mut scene::Scene, x: f64, y: f64, radius: f64, material: material::Material) {
     scene.objs.push(scene::Object {
         shape: Box::new(Sphere {
             center: Point {
