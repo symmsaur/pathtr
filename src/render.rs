@@ -167,7 +167,12 @@ fn shoot_ray<'a>(
     for obj in scene.objs.iter() {
         let new_intersection = obj.shape.intersect(&ray);
         match new_intersection {
-            Some((p, n, t, i)) => match closest_intersection {
+            Some(TraceResult {
+                intersection: p,
+                normal: n,
+                parameter: t,
+                backside: i,
+            }) => match closest_intersection {
                 Some((_, _, _, t_old, _)) => {
                     if t < t_old {
                         closest_intersection = Some((obj, p, n, t, i));

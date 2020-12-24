@@ -3,8 +3,15 @@ use std::ops::Mul;
 use std::ops::Neg;
 use std::ops::Sub;
 
+pub struct TraceResult {
+    pub intersection: Point,
+    pub normal: Vector,
+    pub parameter: f64,
+    pub backside: bool,
+}
+
 pub trait Intersectable: Sync + Send {
-    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64, bool)>;
+    fn intersect(&self, ray: &Ray) -> Option<TraceResult>;
 }
 
 pub struct Ray {
@@ -151,7 +158,7 @@ pub fn cross(v1: Vector, v2: Vector) -> Vector {
 }
 
 impl Intersectable for Plane {
-    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64, bool)> {
+    fn intersect(&self, ray: &Ray) -> Option<TraceResult> {
         let v = -dot(ray.direction, self.normal);
         if v <= 0.0 {
             // The ray is moving away from the plane.
@@ -163,17 +170,17 @@ impl Intersectable for Plane {
             return None;
         }
         let t = d / v;
-        Some((
-            translate(ray.origin, t * ray.direction),
-            self.normal,
-            t,
-            false,
-        ))
+        Some(TraceResult{
+            intersection: translate(ray.origin, t * ray.direction),
+            normal: self.normal,
+            parameter: t,
+            backside: false,
+        })
     }
 }
 
 impl Intersectable for Sphere {
-    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64, bool)> {
+    fn intersect(&self, ray: &Ray) -> Option<TraceResult> {
         let b = 2.0 * dot(ray.direction, ray.origin - self.center);
         //println!("b: {}", b);
         let c = (ray.origin - self.center).square_length() - self.radius * self.radius;
@@ -188,14 +195,14 @@ impl Intersectable for Sphere {
         if t1 > 0.0 {
             let intersection = translate(ray.origin, t1 * ray.direction);
             let normal = (intersection - self.center).normalize();
-            return Some((intersection, normal, t1, false));
+            return Some(TraceResult {intersection, normal, parameter: t1, backside: false});
         }
         let t2 = (-b + delta.sqrt()) / 2.0;
         if t2 > 0.0 {
             let intersection = translate(ray.origin, t2 * ray.direction);
             // We are inside the sphere
             let normal = (self.center - intersection).normalize();
-            return Some((intersection, normal, t2, true));
+            return Some(TraceResult{intersection, normal, parameter: t2, backside: true});
         }
         return None;
     }
