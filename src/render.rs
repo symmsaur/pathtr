@@ -199,7 +199,8 @@ fn gen_ray_c(
     let y_range = x_range / cam.aspect;
     // Goes from -1 to 1
     let param_x = 2.0 * ((x as f64 / width as f64) + (1. / width as f64) * rng.gen::<f64>()) - 1.0;
-    let param_y = 2.0 * ((y as f64 / height as f64) + (1. / height as f64) * rng.gen::<f64>()) - 1.0;
+    let param_y =
+        2.0 * ((y as f64 / height as f64) + (1. / height as f64) * rng.gen::<f64>()) - 1.0;
 
     let p_x = x_range * param_x;
     let p_y = y_range * param_y;

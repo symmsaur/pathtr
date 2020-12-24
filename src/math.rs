@@ -163,7 +163,12 @@ impl Intersectable for Plane {
             return None;
         }
         let t = d / v;
-        Some((translate(ray.origin, t * ray.direction), self.normal, t, false))
+        Some((
+            translate(ray.origin, t * ray.direction),
+            self.normal,
+            t,
+            false,
+        ))
     }
 }
 

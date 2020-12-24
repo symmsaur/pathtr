@@ -43,7 +43,12 @@ fn sdl_thread(rx: mpsc::Receiver<Vec<u8>>, width: u32, height: u32) {
 
     let texture_creator = canvas.texture_creator();
     let mut texture = texture_creator
-        .create_texture(sdl2::pixels::PixelFormatEnum::RGBA32, sdl2::render::TextureAccess::Static, width, height)
+        .create_texture(
+            sdl2::pixels::PixelFormatEnum::RGBA32,
+            sdl2::render::TextureAccess::Static,
+            width,
+            height,
+        )
         .unwrap();
 
     'mainloop: loop {
