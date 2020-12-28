@@ -9,6 +9,7 @@ mod trace;
 use math::*;
 use rand::prelude::*;
 use rand_xorshift::XorShiftRng;
+use std::cell::Cell;
 use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
@@ -100,61 +101,58 @@ fn create_spheres(
         .collect()
 }
 
-fn prep_scene() -> scene::Scene {
+fn prep_scene() -> bbox::BoundingBoxTree {
     // Let's go for 1000 objects!
-    let mut scene = scene::Scene::new();
+    let tree = Cell::new(bbox::BoundingBoxTree::create_empty());
     let white = material::Color {
         red: 1.0,
         green: 1.0,
         blue: 1.0,
     };
 
-    let p1 = Plane {
-        point: Point {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        },
-        normal: Vector {
-            x: 0.0,
-            y: 0.0,
-            z: 1.0,
-        },
-    };
-    let m1 = material::Material::create(white * 0.8, 1.0, 0.0);
-    let obj1 = scene::Object {
-        shape: Box::new(p1),
-        material: m1,
-    };
-    scene.objs.push(obj1);
-
-    scene.objs.append(&mut create_spheres(
-        250,
+    // TODO: Make planes possible to use again
+    // let p1 = Plane {
+    //     point: Point {
+    //         x: 0.0,
+    //         y: 0.0,
+    //         z: 0.0,
+    //     },
+    //     normal: Vector {
+    //         x: 0.0,
+    //         y: 0.0,
+    //         z: 1.0,
+    //     },
+    // };
+    // let m1 = material::Material::create(white * 0.8, 1.0, 0.0);
+    // let obj1 = scene::Object {
+    //     shape: Box::new(p1),
+    //     material: m1,
+    // };
+    // tree.set(tree.take().add(obj1));
+    let mut spheres = create_spheres(2500, 0.1, 0.2, material::Material::create_colored_1());
+    spheres.append(&mut create_spheres(
+        2500,
         0.1,
         0.2,
-        material::Material::create_colored_1(),
-    ));
-    scene.objs.append(&mut create_spheres(
-        250,
-        0.2,
-        0.3,
         material::Material::create_colored_2(),
     ));
-    scene.objs.append(&mut create_spheres(
-        250,
-        0.05,
-        0.15,
+    spheres.append(&mut create_spheres(
+        2500,
+        0.1,
+        0.2,
         material::Material::create_colored_3(),
     ));
-    scene.objs.append(&mut create_spheres(
-        250,
+    spheres.append(&mut create_spheres(
+        2500,
         0.1,
-        0.4,
+        0.2,
         material::Material::create_glass(),
     ));
-
-    // Lights
-    scene.objs.push(scene::Object {
+    for sphere in spheres {
+        tree.set(tree.take().add(sphere));
+    }
+    // // Lights
+    tree.set(tree.take().add(scene::Object {
         shape: Box::new(Sphere {
             center: Point {
                 x: 20.3,
@@ -164,8 +162,8 @@ fn prep_scene() -> scene::Scene {
             radius: 5.0,
         }),
         material: material::Material::create_emissive(white * 5.0),
-    });
-    scene.objs.push(scene::Object {
+    }));
+    tree.set(tree.take().add(scene::Object {
         shape: Box::new(Sphere {
             center: Point {
                 x: -20.0,
@@ -175,7 +173,26 @@ fn prep_scene() -> scene::Scene {
             radius: 4.0,
         }),
         material: material::Material::create_emissive(white * 2.0),
-    });
+    }));
+    tree.into_inner()
 
-    return scene;
+    // scene.objs.append(&mut );
+    // scene.objs.append(&mut create_spheres(
+    //     250,
+    //     0.2,
+    //     0.3,
+    //     material::Material::create_colored_2(),
+    // ));
+    // scene.objs.append(&mut create_spheres(
+    //     250,
+    //     0.05,
+    //     0.15,
+    //     material::Material::create_colored_3(),
+    // ));
+    // scene.objs.append(&mut create_spheres(
+    //     250,
+    //     0.1,
+    //     0.4,
+    //     material::Material::create_glass(),
+    // ));
 }

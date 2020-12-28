@@ -37,9 +37,46 @@ impl Add for BoundingBox {
     }
 }
 
-impl Intersectable for BoundingBox {
-    fn intersect(&self, _ray: &Ray) -> Option<TraceResult> {
-        todo!()
+impl BoundingBox {
+    pub fn check_intersects(&self, ray: &Ray) -> bool {
+        // To hit we need to hit one of six sides of the box
+        // Start by checking the min_x plane
+        let t = (self.min_x - ray.origin.x) / ray.direction.x;
+        let p = translate(ray.origin, t * ray.direction);
+        if t > 0.0 && p.y > self.min_y && p.y < self.max_y && p.z > self.min_z && p.z < self.max_z {
+            return true;
+        }
+        // max_x
+        let t = (self.max_x - ray.origin.x) / ray.direction.x;
+        let p = translate(ray.origin, t * ray.direction);
+        if t > 0.0 && p.y > self.min_y && p.y < self.max_y && p.z > self.min_z && p.z < self.max_z {
+            return true;
+        }
+        // min_y
+        let t = (self.min_y - ray.origin.y) / ray.direction.y;
+        let p = translate(ray.origin, t * ray.direction);
+        if t > 0.0 && p.x > self.min_x && p.x < self.max_x && p.z > self.min_z && p.z < self.max_z {
+            return true;
+        }
+        // max_y
+        let t = (self.max_y - ray.origin.y) / ray.direction.y;
+        let p = translate(ray.origin, t * ray.direction);
+        if t > 0.0 && p.x > self.min_x && p.x < self.max_x && p.z > self.min_z && p.z < self.max_z {
+            return true;
+        }
+        // min_z
+        let t = (self.min_z - ray.origin.z) / ray.direction.z;
+        let p = translate(ray.origin, t * ray.direction);
+        if t > 0.0 && p.x > self.min_x && p.x < self.max_x && p.y > self.min_y && p.y < self.max_y {
+            return true;
+        }
+        // max_z
+        let t = (self.max_z - ray.origin.z) / ray.direction.z;
+        let p = translate(ray.origin, t * ray.direction);
+        if t > 0.0 && p.x > self.min_x && p.x < self.max_x && p.y > self.min_y && p.y < self.max_y {
+            return true;
+        }
+        return false;
     }
 }
 
@@ -59,7 +96,7 @@ pub enum BoundingBoxTree {
 }
 
 impl BoundingBoxTree {
-    fn add(self, object: scene::Object) -> BoundingBoxTree {
+    pub fn add(self, object: scene::Object) -> BoundingBoxTree {
         match self {
             BoundingBoxTree::Node {
                 bounding_box: _,
@@ -116,7 +153,7 @@ impl BoundingBoxTree {
         }
     }
 
-    fn create_empty() -> BoundingBoxTree {
+    pub fn create_empty() -> BoundingBoxTree {
         BoundingBoxTree::Node {
             bounding_box: BoundingBox {
                 ..Default::default()
@@ -124,6 +161,12 @@ impl BoundingBoxTree {
             left: None,
             right: None,
         }
+    }
+}
+
+impl Default for BoundingBoxTree {
+    fn default() -> BoundingBoxTree {
+        BoundingBoxTree::create_empty()
     }
 }
 

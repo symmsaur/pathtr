@@ -4,16 +4,18 @@ use rand_xorshift::XorShiftRng;
 use std::io::{self, Write};
 use std::sync::{mpsc, Arc};
 
+use crate::bbox;
 use crate::material;
 use crate::math::*;
 use crate::preview;
 use crate::scene;
+use crate::trace;
 
 const THREADS: i64 = 4;
 
 fn start_render_job(
     pool: &threadpool::ThreadPool,
-    scene: &Arc<scene::Scene>,
+    scene: &Arc<bbox::BoundingBoxTree>,
     camera: &Arc<scene::Camera>,
     tx: &mpsc::Sender<Vec<material::Color>>,
     width: usize,
@@ -49,7 +51,7 @@ fn start_render_job(
 
 pub fn render(
     preview_window: &preview::Preview,
-    scene: Arc<scene::Scene>,
+    scene: Arc<bbox::BoundingBoxTree>,
     camera: Arc<scene::Camera>,
     width: usize,
     height: usize,
@@ -131,7 +133,11 @@ fn compute_gain(buffer: &Vec<material::Color>) -> f64 {
     return 255. / max;
 }
 
-fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> material::Color {
+fn sample(
+    tree: &bbox::BoundingBoxTree,
+    initial_ray: Ray,
+    rng: &mut XorShiftRng,
+) -> material::Color {
     let mut ray = material::ElRay {
         ray: initial_ray,
         light: material::Color {
@@ -144,7 +150,7 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> mate
         done: false,
     };
     loop {
-        match shoot_ray(&scene, &ray.ray) {
+        match trace::shoot_ray(&tree, &ray.ray) {
             Some((o, p, n, _, i)) => {
                 ray = o.material.new_ray(ray, p, n, i, rng);
             }

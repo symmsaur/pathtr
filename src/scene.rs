@@ -2,6 +2,7 @@ use crate::bbox::Shape;
 use crate::material::Material;
 use crate::math::*;
 
+// Dead code?
 pub struct Scene {
     pub objs: Vec<Object>,
 }
