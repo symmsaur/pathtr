@@ -56,6 +56,7 @@ impl AddAssign for Color {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Material {
     diffuse: Color,
     // Emissivity takes priority

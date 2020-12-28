@@ -1,4 +1,3 @@
-extern crate rand_xorshift;
 use rand::prelude::*;
 use rand_xorshift::XorShiftRng;
 
@@ -56,7 +55,7 @@ pub fn render(
     height: usize,
     rays_per_pixel: i64,
 ) -> Vec<u8> {
-    let num_jobs = rays_per_pixel / 10;
+    let num_jobs = rays_per_pixel;
     let (tx, rx) = mpsc::channel();
     let pool = threadpool::ThreadPool::new(THREADS as usize);
     println!("Running on {} cores", THREADS);

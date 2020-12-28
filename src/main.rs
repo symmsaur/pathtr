@@ -7,12 +7,14 @@ mod scene;
 mod trace;
 
 use math::*;
+use rand::prelude::*;
+use rand_xorshift::XorShiftRng;
 use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
 
-const WIDTH: usize = 1920 / 2;
-const HEIGHT: usize = 1200 / 2;
+const WIDTH: usize = 1920 / 4;
+const HEIGHT: usize = 1200 / 4;
 const RAYS_PER_PIXEL: i64 = 10000;
 
 fn main() {
@@ -38,26 +40,6 @@ fn main() {
         aperture: 0.1,
         focal_distance: 16.0,
     });
-    // let camera = Arc::new(scene::Camera {
-    //     look_from: Point {
-    //         x: 0.0,
-    //         y: 0.0,
-    //         z: 100.0,
-    //     },
-    //     direction: (Vector {
-    //         x: 0.0,
-    //         y: 0.0,
-    //         z: -1.0,
-    //     })
-    //     .normalize(),
-    //     up: Vector {
-    //         x: 0.0,
-    //         y: 1.0,
-    //         z: 0.0,
-    //     },
-    //     fov: 3.14 / 8.0,
-    //     aspect: 1.6,
-    // });
     let scene = Arc::new(prep_scene());
 
     let width = WIDTH;
@@ -95,7 +77,31 @@ fn main() {
     println!("Wrote image.png");
 }
 
+fn create_spheres(
+    num: u32,
+    min_radius: f64,
+    max_radius: f64,
+    material: material::Material,
+) -> Vec<scene::Object> {
+    let mut rng = XorShiftRng::from_entropy();
+    (0..num)
+        .map(|_| {
+            let radius = (max_radius - min_radius) * rng.gen::<f64>() + min_radius;
+            let center = Point {
+                x: 20.0 * rng.gen::<f64>() - 10.0,
+                y: 20.0 * rng.gen::<f64>() - 10.0,
+                z: radius,
+            };
+            scene::Object {
+                shape: Box::new(Sphere { center, radius }),
+                material,
+            }
+        })
+        .collect()
+}
+
 fn prep_scene() -> scene::Scene {
+    // Let's go for 1000 objects!
     let mut scene = scene::Scene::new();
     let white = material::Color {
         red: 1.0,
@@ -122,72 +128,30 @@ fn prep_scene() -> scene::Scene {
     };
     scene.objs.push(obj1);
 
-    add_sphere(
-        &mut scene,
+    scene.objs.append(&mut create_spheres(
+        250,
         0.1,
-        -0.03,
-        1.0,
+        0.2,
         material::Material::create_colored_1(),
-    );
-    add_sphere(
-        &mut scene,
-        -1.7,
-        -1.0,
-        0.7,
-        material::Material::create_colored_2(),
-    );
-    add_sphere(
-        &mut scene,
-        2.0,
+    ));
+    scene.objs.append(&mut create_spheres(
+        250,
+        0.2,
         0.3,
-        1.0,
-        material::Material::create_glass(),
-    );
-
-    add_sphere(
-        &mut scene,
-        -1.0,
-        -3.3,
+        material::Material::create_colored_2(),
+    ));
+    scene.objs.append(&mut create_spheres(
+        250,
+        0.05,
+        0.15,
+        material::Material::create_colored_3(),
+    ));
+    scene.objs.append(&mut create_spheres(
+        250,
+        0.1,
         0.4,
-        material::Material::create_colored_3(),
-    );
-    add_sphere(
-        &mut scene,
-        1.2,
-        -3.3,
-        0.6,
-        material::Material::create_colored_2(),
-    );
-
-    add_sphere(
-        &mut scene,
-        2.2,
-        5.3,
-        0.8,
-        material::Material::create_colored_2(),
-    );
-    add_sphere(
-        &mut scene,
-        -2.0,
-        4.3,
-        1.1,
-        material::Material::create_colored_1(),
-    );
-
-    add_sphere(
-        &mut scene,
-        5.2,
-        15.3,
-        1.0,
-        material::Material::create_colored_1(),
-    );
-    add_sphere(
-        &mut scene,
-        -0.2,
-        10.3,
-        1.0,
-        material::Material::create_colored_3(),
-    );
+        material::Material::create_glass(),
+    ));
 
     // Lights
     scene.objs.push(scene::Object {
@@ -214,18 +178,4 @@ fn prep_scene() -> scene::Scene {
     });
 
     return scene;
-}
-
-fn add_sphere(scene: &mut scene::Scene, x: f64, y: f64, radius: f64, material: material::Material) {
-    scene.objs.push(scene::Object {
-        shape: Box::new(Sphere {
-            center: Point {
-                x: 1.5 * x,
-                y: 1.5 * y,
-                z: radius,
-            },
-            radius: radius,
-        }),
-        material: material,
-    });
 }
