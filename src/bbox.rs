@@ -1,37 +1,10 @@
 use std::ops::Add;
 
-use math::*;
-
-// trait Container {
-//     fn contains(&self, container: &dyn HasContainer<Container>) -> bool;
-// }
-
-// trait HasContainer<T: Container> {
-//     fn get_container(&self) -> T;
-// }
-
-// // Implemented as binary
-// // Leaf nodes?
-// struct SpatialTree<T: Container> {
-//     container: T,
-//     // Option?
-//     left: Box<SpatialTree<T>>,
-//     // Option?
-//     right: Box<SpatialTree<T>>,
-// }
-
-// impl <T: Container> SpatialTree<T> {
-//     fn add(&mut self,obj: Box<dyn HasContainer<T>>) {
-//         if self.left.container.contains(&obj) {
-//             self.left.add(obj);
-//         } else if self.right.container.contains(&obj) {
-//             self.right.add(obj);
-//         }
-//     }
-// }
+use crate::math::*;
+use crate::scene;
 
 #[derive(Default, Debug, Copy, Clone)]
-struct BoundingBox {
+pub struct BoundingBox {
     min_x: f64,
     max_x: f64,
     min_y: f64,
@@ -52,8 +25,6 @@ impl BoundingBox {
 impl Add for BoundingBox {
     type Output = BoundingBox;
 
-    // Union, containing box?
-    // Tests
     fn add(self, other: BoundingBox) -> BoundingBox {
         BoundingBox {
             min_x: f64::min(self.min_x, other.min_x),
@@ -66,7 +37,15 @@ impl Add for BoundingBox {
     }
 }
 
-enum BoundingBoxTree {
+impl Intersectable for BoundingBox {
+    fn intersect(&self, _ray: &Ray) -> Option<TraceResult> {
+        todo!()
+    }
+}
+
+pub trait Shape: HasBoundingBox + Intersectable {}
+
+pub enum BoundingBoxTree {
     Node {
         bounding_box: BoundingBox,
         // Maybe don't need this option? Could use empty leaf nodes instead.
@@ -75,20 +54,20 @@ enum BoundingBoxTree {
         right: Option<Box<BoundingBoxTree>>,
     },
     Leaf {
-        object: Box<dyn HasBoundingBox>,
+        object: scene::Object,
     },
 }
 
 impl BoundingBoxTree {
-    fn add(self, obj: Box<dyn HasBoundingBox>) -> BoundingBoxTree {
+    fn add(self, object: scene::Object) -> BoundingBoxTree {
         match self {
             BoundingBoxTree::Node {
                 bounding_box: _,
                 left: None,
                 right: None,
             } => BoundingBoxTree::Node {
-                bounding_box: obj.get_bounding_box(),
-                left: Some(Box::new(BoundingBoxTree::Leaf { object: obj })),
+                bounding_box: object.shape.get_bounding_box(),
+                left: Some(Box::new(BoundingBoxTree::Leaf { object })),
                 right: None,
             },
             BoundingBoxTree::Node {
@@ -96,9 +75,9 @@ impl BoundingBoxTree {
                 left: left @ Some(_),
                 right: None,
             } => BoundingBoxTree::Node {
-                bounding_box: bounding_box + obj.get_bounding_box(),
+                bounding_box: bounding_box + object.shape.get_bounding_box(),
                 left: left,
-                right: Some(Box::new(BoundingBoxTree::Leaf { object: obj })),
+                right: Some(Box::new(BoundingBoxTree::Leaf { object })),
             },
             BoundingBoxTree::Node {
                 bounding_box,
@@ -107,24 +86,29 @@ impl BoundingBoxTree {
             } => {
                 // This node is full
                 // Put in smaller box
-                let bounding_box = bounding_box + obj.get_bounding_box();
-                let (node_l, node_r) = if (obj.get_bounding_box() + node_l.get_bounding_box()).norm()
-                    < (obj.get_bounding_box() + node_r.get_bounding_box()).norm()
-                {
-                    (Box::new(node_l.add(obj)), node_r)
-                } else {
-                    (node_l, Box::new(node_r.add(obj)))
-                };
+                let bounding_box = bounding_box + object.shape.get_bounding_box();
+                let (node_l, node_r) =
+                    if (object.shape.get_bounding_box() + node_l.get_bounding_box()).norm()
+                        < (object.shape.get_bounding_box() + node_r.get_bounding_box()).norm()
+                    {
+                        (Box::new(node_l.add(object)), node_r)
+                    } else {
+                        (node_l, Box::new(node_r.add(object)))
+                    };
                 BoundingBoxTree::Node {
                     bounding_box: bounding_box,
                     left: Some(node_l),
                     right: Some(node_r),
                 }
             }
-            BoundingBoxTree::Leaf { object } => BoundingBoxTree::Node {
-                bounding_box: object.get_bounding_box() + obj.get_bounding_box(),
-                left: Some(Box::new(BoundingBoxTree::Leaf { object: object })),
-                right: Some(Box::new(BoundingBoxTree::Leaf { object: obj })),
+            BoundingBoxTree::Leaf {
+                object: existing_object,
+            } => BoundingBoxTree::Node {
+                bounding_box: object.shape.get_bounding_box() + object.shape.get_bounding_box(),
+                left: Some(Box::new(BoundingBoxTree::Leaf {
+                    object: existing_object,
+                })),
+                right: Some(Box::new(BoundingBoxTree::Leaf { object })),
             },
             _ => {
                 panic!("Invalid tree state");
@@ -143,7 +127,7 @@ impl BoundingBoxTree {
     }
 }
 
-trait HasBoundingBox {
+pub trait HasBoundingBox {
     fn get_bounding_box(&self) -> BoundingBox;
 }
 
@@ -160,11 +144,28 @@ impl HasBoundingBox for Sphere {
     }
 }
 
+impl HasBoundingBox for Plane {
+    fn get_bounding_box(&self) -> BoundingBox {
+        BoundingBox {
+            min_x: f64::NEG_INFINITY,
+            min_y: f64::NEG_INFINITY,
+            min_z: f64::NEG_INFINITY,
+            max_x: f64::INFINITY,
+            max_y: f64::INFINITY,
+            max_z: f64::INFINITY,
+        }
+    }
+}
+
+impl Shape for Plane {}
+
+impl Shape for Sphere {}
+
 impl HasBoundingBox for BoundingBoxTree {
     fn get_bounding_box(&self) -> BoundingBox {
         match self {
             BoundingBoxTree::Node { bounding_box, .. } => bounding_box.clone(),
-            BoundingBoxTree::Leaf { object } => object.get_bounding_box(),
+            BoundingBoxTree::Leaf { object } => object.shape.get_bounding_box(),
         }
     }
 }
@@ -172,6 +173,14 @@ impl HasBoundingBox for BoundingBoxTree {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::material;
+    fn wrap_in_object(shape: Box<dyn Shape>) -> scene::Object {
+        scene::Object {
+            shape,
+            material: material::Material::create_colored_1(),
+        }
+    }
 
     trait AlmostEquality {
         fn almost_equals(&self, other: Self) -> bool;
@@ -222,7 +231,7 @@ mod tests {
             center: Point::origin(),
             radius: 1.0,
         };
-        let tree = tree.add(Box::new(sphere.clone()));
+        let tree = tree.add(wrap_in_object(Box::new(sphere.clone())));
         match tree {
             BoundingBoxTree::Node {
                 bounding_box,
@@ -255,8 +264,8 @@ mod tests {
             },
             radius: 1.0,
         };
-        let tree = tree.add(Box::new(sphere1.clone()));
-        let tree = tree.add(Box::new(sphere2.clone()));
+        let tree = tree.add(wrap_in_object(Box::new(sphere1.clone())));
+        let tree = tree.add(wrap_in_object(Box::new(sphere2.clone())));
         match tree {
             BoundingBoxTree::Node {
                 bounding_box,
@@ -296,9 +305,9 @@ mod tests {
             },
             radius: 3.0,
         };
-        let tree = tree.add(Box::new(sphere1.clone()));
-        let tree = tree.add(Box::new(sphere2.clone()));
-        let tree = tree.add(Box::new(sphere3.clone()));
+        let tree = tree.add(wrap_in_object(Box::new(sphere1.clone())));
+        let tree = tree.add(wrap_in_object(Box::new(sphere2.clone())));
+        let tree = tree.add(wrap_in_object(Box::new(sphere3.clone())));
         match tree {
             BoundingBoxTree::Node {
                 bounding_box,

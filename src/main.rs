@@ -1,21 +1,18 @@
-extern crate image;
-extern crate rand;
-extern crate sdl2;
-extern crate time;
-
+mod bbox;
 mod material;
 mod math;
 mod preview;
 mod render;
 mod scene;
+mod trace;
 
 use math::*;
 use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1200;
+const WIDTH: usize = 1920 / 2;
+const HEIGHT: usize = 1200 / 2;
 const RAYS_PER_PIXEL: i64 = 10000;
 
 fn main() {
@@ -38,7 +35,7 @@ fn main() {
         },
         fov: 3.14 / 4.0,
         aspect: 1.6,
-        aperture: 0.3,
+        aperture: 0.1,
         focal_distance: 16.0,
     });
     // let camera = Arc::new(scene::Camera {
@@ -158,7 +155,7 @@ fn prep_scene() -> scene::Scene {
         &mut scene,
         1.2,
         -3.3,
-        0.4,
+        0.6,
         material::Material::create_colored_2(),
     );
 

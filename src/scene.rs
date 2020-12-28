@@ -1,3 +1,4 @@
+use crate::bbox::Shape;
 use crate::material::Material;
 use crate::math::*;
 
@@ -6,7 +7,7 @@ pub struct Scene {
 }
 
 pub struct Object {
-    pub shape: Box<dyn Intersectable>,
+    pub shape: Box<dyn Shape>,
     pub material: Material,
 }
 
