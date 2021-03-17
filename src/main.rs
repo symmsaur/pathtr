@@ -1,8 +1,4 @@
-extern crate image;
-extern crate rand;
-extern crate sdl2;
-extern crate time;
-
+mod args;
 mod material;
 mod math;
 mod preview;
@@ -19,6 +15,13 @@ const HEIGHT: usize = 1200;
 const RAYS_PER_PIXEL: i64 = 10000;
 
 fn main() {
+    let args = match args::parse() {
+        Ok(args) => args,
+        Err(err) => {
+            println!("Failed to parse args: {}", err.msg);
+            return;
+        }
+    };
     let camera = Arc::new(scene::Camera {
         look_from: Point {
             x: -0.1,
@@ -66,7 +69,11 @@ fn main() {
     let width = WIDTH;
     let height = HEIGHT;
 
-    let preview_window = preview::open_window(WIDTH, HEIGHT).unwrap();
+    let preview_window = if args.preview {
+        Some(preview::open_window(WIDTH, HEIGHT).unwrap())
+    } else {
+        None
+    };
 
     let start = PreciseTime::now();
     let img_buffer = render::render(
@@ -79,7 +86,9 @@ fn main() {
     );
     let end = PreciseTime::now();
 
-    preview_window.wait();
+    if let Some(p) = preview_window {
+        p.wait();
+    }
 
     let total = start.to(end);
     println!("Time: {} ms", total.num_milliseconds());

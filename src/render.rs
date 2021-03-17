@@ -49,7 +49,7 @@ fn start_render_job(
 }
 
 pub fn render(
-    preview_window: &preview::Preview,
+    preview_window: &Option<preview::Preview>,
     scene: Arc<scene::Scene>,
     camera: Arc<scene::Camera>,
     width: usize,
@@ -102,14 +102,16 @@ pub fn render(
             i += 4;
         }
 
-        let res = preview_window.submit_image(&img_buffer);
-        match res {
-            Err(_) => {
-                println!();
-                println!("Stopped, outputting image...");
-                break;
+        if let Some(p) = preview_window {
+            let res = p.submit_image(&img_buffer);
+            match res {
+                Err(_) => {
+                    println!();
+                    println!("Stopped, outputting image...");
+                    break;
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
     println!();
