@@ -1,0 +1,27 @@
+#+title: pathtr
+
+Path tracers are neat.
+
+* Running
+
+#+begin_src bash
+# -p makes the preview window appear
+cargo run --release -- -p
+#+end_src
+
+* What is this?
+
+This is a small path tracer experiment. I've been working on it off and on (mostly off) since 2017.
+
+** Features
+
+- Global illumination (only)
+- Depth of field simulation
+- Live preview
+- Parallel rendering
+
+** Non-features
+
+- Dynamic scenes
+- Good scaling
+- Particularly good performance
