@@ -22,10 +22,7 @@ pub fn open_window(width: usize, height: usize) -> Result<Preview, String> {
         sdl_thread(rx, width as u32, height as u32);
     });
     // TODO: Check window opened properly before returning.
-    Ok(Preview {
-        thread: child,
-        tx: tx,
-    })
+    Ok(Preview { thread: child, tx })
 }
 
 fn sdl_thread(rx: mpsc::Receiver<Vec<u8>>, width: u32, height: u32) {

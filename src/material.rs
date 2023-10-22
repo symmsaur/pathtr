@@ -75,9 +75,9 @@ pub struct ElRay {
 impl Material {
     pub fn create(diffuse: Color, ior: f64, transparency: f64) -> Material {
         Material {
-            diffuse: diffuse,
-            ior: ior,
-            transparency: transparency,
+            diffuse,
+            ior,
+            transparency,
             emissive: Color {
                 red: 0.0,
                 green: 0.0,
@@ -95,7 +95,7 @@ impl Material {
             },
             ior: 1.0,
             transparency: 0.0,
-            emissive: emissive,
+            emissive,
         }
     }
 
@@ -242,6 +242,35 @@ fn reflection(direction: Vector, normal: Vector) -> Vector {
     direction + 2. * cos_theta * normal
 }
 
+fn reflection_coefficient(in_ior: f64, out_ior: f64, cos_theta: f64) -> f64 {
+    // Using Schlick's approximation
+    let r0 = f64::powi((in_ior - out_ior) / (in_ior + out_ior), 2);
+    return r0 + (1. - r0) * f64::powi(1. - cos_theta, 5);
+}
+
+fn gen_ray_n<R: Rng + ?Sized>(start: Point, normal: Vector, rng: &mut R) -> Ray {
+    // uniform sample over half sphere
+    loop {
+        let x = 2.0 * rng.gen::<f64>() - 1.0;
+        let y = 2.0 * rng.gen::<f64>() - 1.0;
+        let z = 2.0 * rng.gen::<f64>() - 1.0;
+        let v = Vector { x, y, z };
+        if v.square_length() < 1.0 {
+            if dot(v, normal) > 0.0 {
+                return Ray {
+                    origin: start,
+                    direction: v.normalize(),
+                };
+            } else {
+                return Ray {
+                    origin: start,
+                    direction: -v.normalize(),
+                };
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -316,34 +345,5 @@ mod tests {
         let res = refraction(1.5, 1.0, in_direction, normal);
         assert!(-in_direction.x - res.x < 1e-9);
         //assert!(res.y < in_direction.y);
-    }
-}
-
-fn reflection_coefficient(in_ior: f64, out_ior: f64, cos_theta: f64) -> f64 {
-    // Using Schlick's approximation
-    let r0 = f64::powi((in_ior - out_ior) / (in_ior + out_ior), 2);
-    return r0 + (1. - r0) * f64::powi(1. - cos_theta, 5);
-}
-
-fn gen_ray_n<R: Rng + ?Sized>(start: Point, normal: Vector, rng: &mut R) -> Ray {
-    // uniform sample over half sphere
-    loop {
-        let x = 2.0 * rng.gen::<f64>() - 1.0;
-        let y = 2.0 * rng.gen::<f64>() - 1.0;
-        let z = 2.0 * rng.gen::<f64>() - 1.0;
-        let v = Vector { x, y, z };
-        if v.square_length() < 1.0 {
-            if dot(v, normal) > 0.0 {
-                return Ray {
-                    origin: start,
-                    direction: v.normalize(),
-                };
-            } else {
-                return Ray {
-                    origin: start,
-                    direction: -v.normalize(),
-                };
-            }
-        }
     }
 }

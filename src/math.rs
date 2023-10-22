@@ -15,10 +15,7 @@ pub struct Ray {
 impl Ray {
     pub fn create(origin: Point, through: Point) -> Ray {
         let direction = (through - origin).normalize();
-        Ray {
-            origin: origin,
-            direction: direction,
-        }
+        Ray { origin, direction }
     }
 }
 
@@ -520,7 +517,7 @@ mod tests {
                 y: 2.0,
                 z: 3.0,
             },
-            direction: direction,
+            direction,
         };
         let sphere = Sphere {
             center: Point {

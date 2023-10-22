@@ -44,26 +44,6 @@ fn main() {
         aperture: 0.3,
         focal_distance: 16.0,
     });
-    // let camera = Arc::new(scene::Camera {
-    //     look_from: Point {
-    //         x: 0.0,
-    //         y: 0.0,
-    //         z: 100.0,
-    //     },
-    //     direction: (Vector {
-    //         x: 0.0,
-    //         y: 0.0,
-    //         z: -1.0,
-    //     })
-    //     .normalize(),
-    //     up: Vector {
-    //         x: 0.0,
-    //         y: 1.0,
-    //         z: 0.0,
-    //     },
-    //     fov: 3.14 / 8.0,
-    //     aspect: 1.6,
-    // });
     let scene = Arc::new(prep_scene());
 
     let width = WIDTH;
@@ -236,8 +216,8 @@ fn add_sphere(scene: &mut scene::Scene, x: f64, y: f64, radius: f64, material: m
                 y: 1.5 * y,
                 z: radius,
             },
-            radius: radius,
+            radius,
         }),
-        material: material,
+        material,
     });
 }
