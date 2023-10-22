@@ -10,9 +10,9 @@ use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
 
-const WIDTH: usize = 1920;
-const HEIGHT: usize = 1200;
-const RAYS_PER_PIXEL: i64 = 10000;
+const WIDTH: usize = 800;
+const HEIGHT: usize = 500;
+const RAYS_PER_PIXEL: i64 = 1000;
 
 fn main() {
     let args = match args::parse() {
