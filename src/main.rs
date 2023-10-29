@@ -1,4 +1,3 @@
-mod args;
 mod material;
 mod math;
 mod preview;
@@ -6,6 +5,8 @@ mod render;
 mod scene;
 
 use math::*;
+
+use clap::Parser;
 use std::path::Path;
 use std::sync::Arc;
 use time::PreciseTime;
@@ -14,14 +15,18 @@ const WIDTH: usize = 800;
 const HEIGHT: usize = 500;
 const RAYS_PER_PIXEL: i64 = 1000;
 
+#[derive(Parser)]
+pub struct Args {
+    #[arg(short, long)]
+    pub preview: bool,
+}
+
+pub fn parse() -> Args {
+    Args::parse()
+}
+
 fn main() {
-    let args = match args::parse() {
-        Ok(args) => args,
-        Err(err) => {
-            println!("Failed to parse args: {}", err.msg);
-            return;
-        }
-    };
+    let args = Args::parse();
     let camera = Arc::new(scene::Camera {
         look_from: Point {
             x: -0.1,
