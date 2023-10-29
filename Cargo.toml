@@ -5,11 +5,10 @@ authors = ["Jonathan Karlsson <karlsjona@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-clap = { version = "4.4.7", features = ["derive"] }
+clap = { version = "*", features = ["derive"] }
 cpuprofiler = "*"
 image = "*"
 rand = "*"
 rand_xorshift = "*"
 sdl2 = "*"
 threadpool = "*"
-time = "*"

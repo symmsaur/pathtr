@@ -4,12 +4,12 @@ mod preview;
 mod render;
 mod scene;
 
-use math::*;
-
 use clap::Parser;
+use image::ColorType::Rgba8;
+use math::*;
 use std::path::Path;
 use std::sync::Arc;
-use time::PreciseTime;
+use std::time::Instant;
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 500;
@@ -60,7 +60,7 @@ fn main() {
         None
     };
 
-    let start = PreciseTime::now();
+    let start = Instant::now();
     let img_buffer = render::render(
         &preview_window,
         scene,
@@ -69,24 +69,23 @@ fn main() {
         height,
         RAYS_PER_PIXEL,
     );
-    let end = PreciseTime::now();
+    let total = start.elapsed().as_millis();
 
     if let Some(p) = preview_window {
         p.wait();
     }
 
-    let total = start.to(end);
-    println!("Time: {} ms", total.num_milliseconds());
+    println!("Time: {} ms", total);
     println!(
         "Rays per ms: {}",
-        RAYS_PER_PIXEL as usize * width * height / total.num_milliseconds() as usize
+        RAYS_PER_PIXEL as usize * width * height / total as usize
     );
     image::save_buffer(
         &Path::new("image.png"),
         &img_buffer[..],
         WIDTH as u32,
         HEIGHT as u32,
-        image::RGBA(8),
+        Rgba8,
     )
     .unwrap();
     println!("Wrote image.png");
