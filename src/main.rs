@@ -212,7 +212,7 @@ fn prep_scene() -> scene::Scene {
     return scene;
 }
 
-fn add_sphere(scene: &mut scene::Scene, x: f64, y: f64, radius: f64, material: material::Material) {
+fn add_sphere(scene: &mut scene::Scene, x: f32, y: f32, radius: f32, material: material::Material) {
     scene.objs.push(scene::Object {
         shape: Box::new(Sphere {
             center: Point {

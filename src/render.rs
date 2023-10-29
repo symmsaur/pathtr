@@ -86,7 +86,7 @@ pub fn render(
     let mut finished_jobs = 0;
     for buffer in rx {
         finished_jobs += 1;
-        print!("\r{:.2}%", 100. * finished_jobs as f64 / num_jobs as f64);
+        print!("\r{:.2}%", 100. * finished_jobs as f32 / num_jobs as f32);
         io::stdout().flush().unwrap();
         for (i, val) in buffer.iter().enumerate() {
             accumulator[i] += *val;
@@ -118,7 +118,7 @@ pub fn render(
     img_buffer
 }
 
-fn compute_gain(buffer: &Vec<material::Color>) -> f64 {
+fn compute_gain(buffer: &Vec<material::Color>) -> f32 {
     let mut max = 0.;
     for &val in buffer {
         if val.red > max {
@@ -164,8 +164,8 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> mate
 fn shoot_ray<'a>(
     scene: &'a scene::Scene,
     ray: &Ray,
-) -> Option<(&'a scene::Object, Point, Vector, f64, bool)> {
-    let mut closest_intersection: Option<(&'a scene::Object, Point, Vector, f64, bool)> = None;
+) -> Option<(&'a scene::Object, Point, Vector, f32, bool)> {
+    let mut closest_intersection: Option<(&'a scene::Object, Point, Vector, f32, bool)> = None;
     for obj in scene.objs.iter() {
         let new_intersection = obj.shape.intersect(&ray);
         match new_intersection {
@@ -200,9 +200,9 @@ fn generate_camera_ray(
     let x_range = (cam.fov / 2.0).tan();
     let y_range = x_range / cam.aspect;
     // Goes from -1 to 1
-    let param_x = 2.0 * ((x as f64 / width as f64) + (1. / width as f64) * rng.gen::<f64>()) - 1.0;
+    let param_x = 2.0 * ((x as f32 / width as f32) + (1. / width as f32) * rng.gen::<f32>()) - 1.0;
     let param_y =
-        2.0 * ((y as f64 / height as f64) + (1. / height as f64) * rng.gen::<f64>()) - 1.0;
+        2.0 * ((y as f32 / height as f32) + (1. / height as f32) * rng.gen::<f32>()) - 1.0;
 
     let p_x = x_range * param_x;
     let p_y = y_range * param_y;
@@ -219,8 +219,8 @@ fn generate_camera_ray(
     while perturbation_param_x * perturbation_param_x + perturbation_param_y * perturbation_param_y
         > 1.0
     {
-        perturbation_param_x = 2.0 * rng.gen::<f64>() - 1.0;
-        perturbation_param_y = 2.0 * rng.gen::<f64>() - 1.0;
+        perturbation_param_x = 2.0 * rng.gen::<f32>() - 1.0;
+        perturbation_param_y = 2.0 * rng.gen::<f32>() - 1.0;
     }
     let perturbation_x = perturbation_param_x * cam.aperture;
     let perturbation_y = perturbation_param_y * cam.aperture;

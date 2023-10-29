@@ -8,9 +8,9 @@ use crate::math::*;
 
 #[derive(Copy, Clone)]
 pub struct Color {
-    pub red: f64,
-    pub green: f64,
-    pub blue: f64,
+    pub red: f32,
+    pub green: f32,
+    pub blue: f32,
 }
 
 impl Mul for Color {
@@ -24,9 +24,9 @@ impl Mul for Color {
     }
 }
 
-impl Mul<f64> for Color {
+impl Mul<f32> for Color {
     type Output = Color;
-    fn mul(self, rhs: f64) -> Color {
+    fn mul(self, rhs: f32) -> Color {
         Color {
             red: self.red * rhs,
             green: self.green * rhs,
@@ -60,20 +60,20 @@ pub struct Material {
     diffuse: Color,
     // Emissivity takes priority
     emissive: Color,
-    ior: f64,
-    transparency: f64,
+    ior: f32,
+    transparency: f32,
 }
 
 pub struct LightRay {
     pub ray: Ray,
     pub light: Color,
-    pub ior: f64,
+    pub ior: f32,
     pub count: i32,
     pub done: bool,
 }
 
 impl Material {
-    pub fn create(diffuse: Color, ior: f64, transparency: f64) -> Material {
+    pub fn create(diffuse: Color, ior: f32, transparency: f32) -> Material {
         Material {
             diffuse,
             ior,
@@ -188,7 +188,7 @@ impl Material {
                 count: ray.count + 1,
                 done: true,
             }
-        } else if rng.gen::<f64>() < reflection_coefficient(ray.ior, self.ior, cos_theta) {
+        } else if rng.gen::<f32>() < reflection_coefficient(ray.ior, self.ior, cos_theta) {
             LightRay {
                 ray: Ray {
                     origin: point,
@@ -199,7 +199,7 @@ impl Material {
                 count: ray.count + 1,
                 done: false,
             }
-        } else if self.transparency > 0. && rng.gen::<f64>() < self.transparency {
+        } else if self.transparency > 0. && rng.gen::<f32>() < self.transparency {
             let mut new_ray = LightRay {
                 ray: Ray {
                     origin: point,
@@ -224,7 +224,7 @@ impl Material {
     }
 }
 
-fn refraction(in_ior: f64, out_ior: f64, in_direction: Vector, normal: Vector) -> Vector {
+fn refraction(in_ior: f32, out_ior: f32, in_direction: Vector, normal: Vector) -> Vector {
     let r = in_ior / out_ior;
     let cos_theta = -dot(normal, in_direction);
     let sin2_theta = r * r * (1.0 - cos_theta * cos_theta);
@@ -233,7 +233,7 @@ fn refraction(in_ior: f64, out_ior: f64, in_direction: Vector, normal: Vector) -
         reflection(in_direction, normal)
     } else {
         // Refraction
-        r * in_direction + (r * cos_theta - f64::sqrt(1.0 - sin2_theta)) * normal
+        r * in_direction + (r * cos_theta - f32::sqrt(1.0 - sin2_theta)) * normal
     }
 }
 
@@ -242,18 +242,18 @@ fn reflection(direction: Vector, normal: Vector) -> Vector {
     direction + 2. * cos_theta * normal
 }
 
-fn reflection_coefficient(in_ior: f64, out_ior: f64, cos_theta: f64) -> f64 {
+fn reflection_coefficient(in_ior: f32, out_ior: f32, cos_theta: f32) -> f32 {
     // Using Schlick's approximation
-    let r0 = f64::powi((in_ior - out_ior) / (in_ior + out_ior), 2);
-    return r0 + (1. - r0) * f64::powi(1. - cos_theta, 5);
+    let r0 = f32::powi((in_ior - out_ior) / (in_ior + out_ior), 2);
+    return r0 + (1. - r0) * f32::powi(1. - cos_theta, 5);
 }
 
 fn generate_half_sphere_ray<R: Rng + ?Sized>(start: Point, normal: Vector, rng: &mut R) -> Ray {
     // uniform sample over half sphere
     loop {
-        let x = 2.0 * rng.gen::<f64>() - 1.0;
-        let y = 2.0 * rng.gen::<f64>() - 1.0;
-        let z = 2.0 * rng.gen::<f64>() - 1.0;
+        let x = 2.0 * rng.gen::<f32>() - 1.0;
+        let y = 2.0 * rng.gen::<f32>() - 1.0;
+        let z = 2.0 * rng.gen::<f32>() - 1.0;
         let v = Vector { x, y, z };
         if v.square_length() < 1.0 {
             if dot(v, normal) > 0.0 {

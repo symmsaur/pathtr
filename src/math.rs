@@ -4,7 +4,7 @@ use std::ops::Neg;
 use std::ops::Sub;
 
 pub trait Intersectable: Sync + Send {
-    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64, bool)>;
+    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f32, bool)>;
 }
 
 pub struct Ray {
@@ -21,16 +21,16 @@ impl Ray {
 
 #[derive(Copy, Clone)]
 pub struct Point {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 #[derive(Copy, Clone)]
 pub struct Vector {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 impl Vector {
@@ -42,10 +42,10 @@ impl Vector {
             z: self.z / l,
         }
     }
-    pub fn length(self) -> f64 {
+    pub fn length(self) -> f32 {
         self.square_length().sqrt()
     }
-    pub fn square_length(self) -> f64 {
+    pub fn square_length(self) -> f32 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
 }
@@ -98,7 +98,7 @@ impl Sub for Point {
     }
 }
 
-impl Mul<Vector> for f64 {
+impl Mul<Vector> for f32 {
     type Output = Vector;
 
     fn mul(self, rhs: Vector) -> Vector {
@@ -112,7 +112,7 @@ impl Mul<Vector> for f64 {
 
 pub struct Sphere {
     pub center: Point,
-    pub radius: f64,
+    pub radius: f32,
 }
 
 pub struct Plane {
@@ -121,7 +121,7 @@ pub struct Plane {
 }
 
 impl Plane {
-    fn signed_distance(&self, point: Point) -> f64 {
+    fn signed_distance(&self, point: Point) -> f32 {
         let pp = point - self.point;
         dot(pp, self.normal)
     }
@@ -135,7 +135,7 @@ pub fn translate(p: Point, v: Vector) -> Point {
     }
 }
 
-pub fn dot(v1: Vector, v2: Vector) -> f64 {
+pub fn dot(v1: Vector, v2: Vector) -> f32 {
     v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
 }
 
@@ -148,7 +148,7 @@ pub fn cross(v1: Vector, v2: Vector) -> Vector {
 }
 
 impl Intersectable for Plane {
-    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64, bool)> {
+    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f32, bool)> {
         let v = -dot(ray.direction, self.normal);
         if v <= 0.0 {
             // The ray is moving away from the plane.
@@ -170,7 +170,7 @@ impl Intersectable for Plane {
 }
 
 impl Intersectable for Sphere {
-    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f64, bool)> {
+    fn intersect(&self, ray: &Ray) -> Option<(Point, Vector, f32, bool)> {
         let b = 2.0 * dot(ray.direction, ray.origin - self.center);
         //println!("b: {}", b);
         let c = (ray.origin - self.center).square_length() - self.radius * self.radius;
@@ -211,7 +211,7 @@ mod tests {
         };
         let res = v.length();
         // Reasonable eps?
-        assert!((1.0_f64 + 2.0_f64 + 3.0_f64).sqrt() - res < 1e-10);
+        assert!((1.0_f32 + 2.0_f32 + 3.0_f32).sqrt() - res < 1e-10);
     }
 
     #[test]
@@ -499,7 +499,7 @@ mod tests {
         assert_eq!(0.0, normal.z);
     }
 
-    fn almost_eq(v1: f64, v2: f64) -> bool {
+    fn almost_eq(v1: f32, v2: f32) -> bool {
         (v1 - v2).abs() < 1e-10
     }
 

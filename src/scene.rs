@@ -20,8 +20,8 @@ pub struct Camera {
     pub look_from: Point,
     pub direction: Vector,
     pub up: Vector,
-    pub fov: f64,
-    pub aspect: f64,
-    pub aperture: f64,
-    pub focal_distance: f64,
+    pub fov: f32,
+    pub aspect: f32,
+    pub aperture: f32,
+    pub focal_distance: f32,
 }
