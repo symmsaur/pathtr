@@ -148,8 +148,16 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> mate
     };
     loop {
         match shoot_ray(&scene, &ray.ray) {
-            Some((o, p, n, _, i)) => {
-                ray = o.material.new_ray(ray, p, n, i, rng);
+            Some((
+                obj,
+                Intersection {
+                    point,
+                    normal,
+                    inside,
+                    ..
+                },
+            )) => {
+                ray = obj.material.new_ray(ray, point, normal, inside, rng);
             }
             None => {
                 return ray.light;
@@ -161,28 +169,21 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> mate
     }
 }
 
-fn shoot_ray<'a>(
-    scene: &'a scene::Scene,
-    ray: &Ray,
-) -> Option<(&'a scene::Object, Point, Vector, f32, bool)> {
-    let mut closest_intersection: Option<(&'a scene::Object, Point, Vector, f32, bool)> = None;
+fn shoot_ray<'a>(scene: &'a scene::Scene, ray: &Ray) -> Option<(&'a scene::Object, Intersection)> {
+    let mut closest_intersection: Option<(&'a scene::Object, Intersection)> = None;
     for obj in scene.objs.iter() {
-        let new_intersection = obj.shape.intersect(&ray);
-        match new_intersection {
-            Some((p, n, t, i)) => match closest_intersection {
-                Some((_, _, _, t_old, _)) => {
-                    if t < t_old {
-                        closest_intersection = Some((obj, p, n, t, i));
-                    }
+        match obj.shape.intersect(&ray) {
+            Some(intersection) => {
+                if !closest_intersection.is_some()
+                    || intersection.distance < closest_intersection.unwrap().1.distance
+                {
+                    closest_intersection = Some((obj, intersection));
                 }
-                None => {
-                    closest_intersection = Some((obj, p, n, t, i));
-                }
-            },
+            }
             None => {}
         }
     }
-    return closest_intersection;
+    closest_intersection
 }
 
 fn generate_camera_ray(
