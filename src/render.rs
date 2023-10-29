@@ -43,8 +43,8 @@ fn start_render_job(
                 }
             }
         }
-        // TODO: After shut down avoid failing here.
-        my_tx.send(buffer).unwrap();
+        // The receiver may have shut down and then we send the data into the void.
+        let _ = my_tx.send(buffer);
     });
 }
 
