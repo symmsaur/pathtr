@@ -3,3 +3,5 @@
 *.png
 .#*
 *.swp
+perf.data
+perf.data.old
