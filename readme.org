@@ -2,6 +2,8 @@
 
 Path tracers are neat.
 
+[[https://user-images.githubusercontent.com/2276384/278906059-0256107d-55aa-46c5-ad61-1680fbd43add.png]]
+
 * Running
 
 #+begin_src bash
