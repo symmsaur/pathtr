@@ -37,7 +37,7 @@ fn start_render_job(
         for y in 0..height {
             for x in 0..width {
                 for _ in 0..rays_per_pixel {
-                    let ray = gen_ray_c(&my_camera, &mut rng, x, y, width, height);
+                    let ray = generate_camera_ray(&my_camera, &mut rng, x, y, width, height);
                     let val = sample(&my_scene, ray, &mut rng);
                     buffer[width * y + x] += val;
                 }
@@ -135,7 +135,7 @@ fn compute_gain(buffer: &Vec<material::Color>) -> f64 {
 }
 
 fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> material::Color {
-    let mut ray = material::ElRay {
+    let mut ray = material::LightRay {
         ray: initial_ray,
         light: material::Color {
             red: 1.0,
@@ -185,7 +185,7 @@ fn shoot_ray<'a>(
     return closest_intersection;
 }
 
-fn gen_ray_c(
+fn generate_camera_ray(
     cam: &scene::Camera,
     rng: &mut XorShiftRng,
     x: usize,

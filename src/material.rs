@@ -64,7 +64,7 @@ pub struct Material {
     transparency: f64,
 }
 
-pub struct ElRay {
+pub struct LightRay {
     pub ray: Ray,
     pub light: Color,
     pub ior: f64,
@@ -169,16 +169,16 @@ impl Material {
 
     pub fn new_ray<R: Rng + ?Sized>(
         &self,
-        ray: ElRay,
+        ray: LightRay,
         point: Point,
         normal: Vector,
         inside: bool,
         mut rng: &mut R,
-    ) -> ElRay {
+    ) -> LightRay {
         let incoming_direction = ray.ray.direction;
         let cos_theta = -dot(incoming_direction, normal);
         if self.emissive.red != 0.0 || self.emissive.blue != 0.0 || self.emissive.green != 0.0 {
-            ElRay {
+            LightRay {
                 ray: Ray {
                     origin: point,
                     direction: normal,
@@ -189,7 +189,7 @@ impl Material {
                 done: true,
             }
         } else if rng.gen::<f64>() < reflection_coefficient(ray.ior, self.ior, cos_theta) {
-            ElRay {
+            LightRay {
                 ray: Ray {
                     origin: point,
                     direction: reflection(incoming_direction, normal),
@@ -200,7 +200,7 @@ impl Material {
                 done: false,
             }
         } else if self.transparency > 0. && rng.gen::<f64>() < self.transparency {
-            let mut new_ray = ElRay {
+            let mut new_ray = LightRay {
                 ray: Ray {
                     origin: point,
                     direction: refraction(ray.ior, self.ior, incoming_direction, normal),
@@ -213,8 +213,8 @@ impl Material {
             new_ray.ray.origin = translate(new_ray.ray.origin, 1e-8 * new_ray.ray.direction);
             new_ray
         } else {
-            ElRay {
-                ray: gen_ray_n(point, normal, &mut rng),
+            LightRay {
+                ray: generate_half_sphere_ray(point, normal, &mut rng),
                 light: self.diffuse * ray.light,
                 ior: ray.ior,
                 count: ray.count + 1,
@@ -248,7 +248,7 @@ fn reflection_coefficient(in_ior: f64, out_ior: f64, cos_theta: f64) -> f64 {
     return r0 + (1. - r0) * f64::powi(1. - cos_theta, 5);
 }
 
-fn gen_ray_n<R: Rng + ?Sized>(start: Point, normal: Vector, rng: &mut R) -> Ray {
+fn generate_half_sphere_ray<R: Rng + ?Sized>(start: Point, normal: Vector, rng: &mut R) -> Ray {
     // uniform sample over half sphere
     loop {
         let x = 2.0 * rng.gen::<f64>() - 1.0;
