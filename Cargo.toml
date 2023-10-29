@@ -12,3 +12,6 @@ rand = "*"
 rand_xorshift = "*"
 sdl2 = "*"
 threadpool = "*"
+
+[profile.release]
+debug = true
