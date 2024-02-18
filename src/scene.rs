@@ -1,21 +1,12 @@
+use crate::bbox::Shape;
 use crate::material::Material;
 use crate::math::*;
 
-pub struct Scene {
-    pub objs: Vec<Object>,
-}
-
+#[derive(Debug)]
 pub struct Object {
-    pub shape: Box<dyn Intersectable>,
+    pub shape: Box<dyn Shape>,
     pub material: Material,
 }
-
-impl Scene {
-    pub fn new() -> Scene {
-        Scene { objs: Vec::new() }
-    }
-}
-
 pub struct Camera {
     pub look_from: Point,
     pub direction: Vector,

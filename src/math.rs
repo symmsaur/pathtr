@@ -3,16 +3,15 @@ use std::ops::Mul;
 use std::ops::Neg;
 use std::ops::Sub;
 
-#[derive(Copy, Clone)]
-pub struct Intersection {
-    pub point: Point,
+pub struct TraceResult {
+    pub intersection: Point,
     pub normal: Vector,
-    pub distance: f32,
-    pub inside: bool,
+    pub parameter: f32,
+    pub backside: bool,
 }
 
 pub trait Intersectable: Sync + Send {
-    fn intersect(&self, ray: &Ray) -> Option<Intersection>;
+    fn intersect(&self, ray: &Ray) -> Option<TraceResult>;
 }
 
 pub struct Ray {
@@ -23,18 +22,31 @@ pub struct Ray {
 impl Ray {
     pub fn create(origin: Point, through: Point) -> Ray {
         let direction = (through - origin).normalize();
-        Ray { origin, direction }
+        Ray {
+            origin: origin,
+            direction: direction,
+        }
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Point {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
 
-#[derive(Copy, Clone)]
+impl Point {
+    pub fn origin() -> Point {
+        Point {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
 pub struct Vector {
     pub x: f32,
     pub y: f32,
@@ -118,11 +130,13 @@ impl Mul<Vector> for f32 {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Sphere {
     pub center: Point,
     pub radius: f32,
 }
 
+#[derive(Clone, Debug)]
 pub struct Plane {
     pub point: Point,
     pub normal: Vector,
@@ -156,7 +170,7 @@ pub fn cross(v1: Vector, v2: Vector) -> Vector {
 }
 
 impl Intersectable for Plane {
-    fn intersect(&self, ray: &Ray) -> Option<Intersection> {
+    fn intersect(&self, ray: &Ray) -> Option<TraceResult> {
         let v = -dot(ray.direction, self.normal);
         if v <= 0.0 {
             // The ray is moving away from the plane.
@@ -168,32 +182,36 @@ impl Intersectable for Plane {
             return None;
         }
         let t = d / v;
-        Some(Intersection {
-            point: translate(ray.origin, t * ray.direction),
+        Some(TraceResult {
+            intersection: translate(ray.origin, t * ray.direction),
             normal: self.normal,
-            distance: t,
-            inside: false,
+            parameter: t,
+            backside: false,
         })
     }
 }
 
 impl Intersectable for Sphere {
-    fn intersect(&self, ray: &Ray) -> Option<Intersection> {
+    fn intersect(&self, ray: &Ray) -> Option<TraceResult> {
         let b = 2.0 * dot(ray.direction, ray.origin - self.center);
+        //println!("b: {}", b);
         let c = (ray.origin - self.center).square_length() - self.radius * self.radius;
+        //println!("c: {}", c);
         let delta = b * b - 4.0 * c;
+        //println!("delta: {}", delta);
         if delta < 0.0 {
             return None;
         }
+        // Let's assume this is a normal second degree equation solution.
         let t1 = (-b - delta.sqrt()) / 2.0;
         if t1 > 0.0 {
             let intersection = translate(ray.origin, t1 * ray.direction);
             let normal = (intersection - self.center).normalize();
-            return Some(Intersection {
-                point: intersection,
+            return Some(TraceResult {
+                intersection,
                 normal,
-                distance: t1,
-                inside: false,
+                parameter: t1,
+                backside: false,
             });
         }
         let t2 = (-b + delta.sqrt()) / 2.0;
@@ -201,11 +219,11 @@ impl Intersectable for Sphere {
             let intersection = translate(ray.origin, t2 * ray.direction);
             // We are inside the sphere
             let normal = (self.center - intersection).normalize();
-            return Some(Intersection {
-                point: intersection,
+            return Some(TraceResult {
+                intersection,
                 normal,
-                distance: t2,
-                inside: true,
+                parameter: t2,
+                backside: true,
             });
         }
         return None;
@@ -396,10 +414,15 @@ mod tests {
             },
             radius: 1.0,
         };
-        let Intersection { point: res, .. } = sphere.intersect(&ray).unwrap();
-        assert_eq!(-1.0, res.x);
-        assert_eq!(0.0, res.y);
-        assert_eq!(0.0, res.z);
+        let TraceResult {
+            intersection,
+            normal: _,
+            parameter: _,
+            backside: _,
+        } = sphere.intersect(&ray).unwrap();
+        assert_eq!(-1.0, intersection.x);
+        assert_eq!(0.0, intersection.y);
+        assert_eq!(0.0, intersection.z);
     }
 
     #[test]
@@ -424,10 +447,15 @@ mod tests {
             },
             radius: 0.5,
         };
-        let Intersection { point: res, .. } = sphere.intersect(&ray).unwrap();
-        assert_eq!(0.0, res.x);
-        assert_eq!(-0.5, res.y);
-        assert_eq!(0.0, res.z);
+        let TraceResult {
+            intersection,
+            normal: _,
+            parameter: _,
+            backside: _,
+        } = sphere.intersect(&ray).unwrap();
+        assert_eq!(0.0, intersection.x);
+        assert_eq!(-0.5, intersection.y);
+        assert_eq!(0.0, intersection.z);
     }
 
     #[test]
@@ -452,16 +480,16 @@ mod tests {
             },
             radius: 0.5,
         };
-        let Intersection {
-            point: res,
+        let TraceResult {
+            intersection,
             normal: _,
-            distance: t,
-            ..
+            parameter,
+            backside: _,
         } = sphere.intersect(&ray).unwrap();
-        assert_eq!(1.0, res.x);
-        assert_eq!(1.5, res.y);
-        assert_eq!(3.0, res.z);
-        assert_eq!(0.5, t);
+        assert_eq!(1.0, intersection.x);
+        assert_eq!(1.5, intersection.y);
+        assert_eq!(3.0, intersection.z);
+        assert_eq!(0.5, parameter);
     }
 
     #[test]
@@ -512,14 +540,19 @@ mod tests {
             },
             radius: 0.5,
         };
-        let Intersection { normal, .. } = sphere.intersect(&ray).unwrap();
+        let TraceResult {
+            intersection: _,
+            normal,
+            parameter: _,
+            backside: _,
+        } = sphere.intersect(&ray).unwrap();
         assert_eq!(0.0, normal.x);
         assert_eq!(-1.0, normal.y);
         assert_eq!(0.0, normal.z);
     }
 
     fn almost_eq(v1: f32, v2: f32) -> bool {
-        (v1 - v2).abs() < 1e-6
+        (v1 - v2).abs() < 1e-10
     }
 
     #[test]
@@ -536,7 +569,7 @@ mod tests {
                 y: 2.0,
                 z: 3.0,
             },
-            direction,
+            direction: direction,
         };
         let sphere = Sphere {
             center: Point {
@@ -546,7 +579,12 @@ mod tests {
             },
             radius: 0.5,
         };
-        let Intersection { normal, .. } = sphere.intersect(&ray).unwrap();
+        let TraceResult {
+            intersection: _,
+            normal,
+            parameter: _,
+            backside: _,
+        } = sphere.intersect(&ray).unwrap();
         assert!(almost_eq(-direction.x, normal.x));
         assert!(almost_eq(-direction.y, normal.y));
         assert!(almost_eq(-direction.z, normal.z));
@@ -629,11 +667,16 @@ mod tests {
             },
         };
 
-        let Intersection { point: p, .. } = plane.intersect(&ray).unwrap();
+        let TraceResult {
+            intersection,
+            normal: _,
+            parameter: _,
+            backside: _,
+        } = plane.intersect(&ray).unwrap();
 
-        assert_eq!(2.0, p.y);
-        assert_eq!(3.0, p.z);
-        assert_eq!(-1.0, p.x);
+        assert_eq!(2.0, intersection.y);
+        assert_eq!(3.0, intersection.z);
+        assert_eq!(-1.0, intersection.x);
     }
 
     #[test]
@@ -664,15 +707,16 @@ mod tests {
             },
         };
 
-        let Intersection {
-            point: p,
-            distance: t,
-            ..
+        let TraceResult {
+            intersection,
+            normal: _,
+            parameter,
+            backside: _,
         } = plane.intersect(&ray).unwrap();
 
-        assert_eq!(-1.0, p.x);
-        assert_eq!(-4.0, p.y);
-        assert_eq!(0.0, p.z);
+        assert_eq!(-1.0, intersection.x);
+        assert_eq!(-4.0, intersection.y);
+        assert_eq!(0.0, intersection.z);
         assert_eq!(
             (Vector {
                 x: -2.0,
@@ -680,7 +724,7 @@ mod tests {
                 z: 0.0
             })
             .length(),
-            t
+            parameter
         );
     }
 

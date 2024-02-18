@@ -8,10 +8,12 @@ edition = "2021"
 clap = { version = "*", features = ["derive"] }
 cpuprofiler = "*"
 image = "*"
+itertools = "*"
 rand = "*"
 rand_xorshift = "*"
 sdl2 = "*"
 threadpool = "*"
+time = "*"
 
 [profile.release]
 debug = true

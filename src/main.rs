@@ -1,12 +1,19 @@
+mod args;
+mod bbox;
+mod bbox_tree_stats;
 mod material;
 mod math;
 mod preview;
 mod render;
 mod scene;
+mod trace;
 
 use clap::Parser;
 use image::ColorType::Rgba8;
 use math::*;
+use rand::prelude::*;
+use rand_xorshift::XorShiftRng;
+use std::cell::Cell;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
@@ -29,27 +36,29 @@ fn main() {
     let args = Args::parse();
     let camera = Arc::new(scene::Camera {
         look_from: Point {
-            x: -0.1,
-            y: -15.0,
-            z: 4.8,
+            x: -20.0,
+            y: -20.0,
+            z: 20.0,
         },
         direction: (Vector {
-            x: 0.05,
-            y: 1.0,
-            z: -0.25,
+            x: 20.0,
+            y: 20.0,
+            z: -20.0,
         })
         .normalize(),
         up: Vector {
-            x: 0.0,
+            x: 1.0,
             y: 0.0,
-            z: 1.0,
+            z: 0.0,
         },
-        fov: 3.14 / 4.0,
+        fov: 3.1415 / 4.0,
         aspect: 1.6,
-        aperture: 0.3,
-        focal_distance: 16.0,
+        aperture: 0.1,
+        focal_distance: 20.0,
     });
     let scene = Arc::new(prep_scene());
+
+    bbox_tree_stats::print_bounding_box_tree_stats(&scene);
 
     let width = WIDTH;
     let height = HEIGHT;
@@ -91,102 +100,93 @@ fn main() {
     println!("Wrote image.png");
 }
 
-fn prep_scene() -> scene::Scene {
-    let mut scene = scene::Scene::new();
+fn create_spheres(
+    num: u32,
+    min_radius: f32,
+    max_radius: f32,
+    material: material::Material,
+    rng: &mut XorShiftRng,
+) -> Vec<scene::Object> {
+    (0..num)
+        .map(|_| {
+            let radius = (max_radius - min_radius) * rng.gen::<f32>() + min_radius;
+            let center = Point {
+                x: 20.0 * rng.gen::<f32>() - 10.0,
+                y: 20.0 * rng.gen::<f32>() - 10.0,
+                z: 20.0 * rng.gen::<f32>() - 10.0,
+            };
+            scene::Object {
+                shape: Box::new(Sphere { center, radius }),
+                material,
+            }
+        })
+        .collect()
+}
+
+fn prep_scene() -> bbox::BoundingBoxTree {
+    let num_objects = 100;
+    let tree = Cell::new(bbox::BoundingBoxTree::create_empty());
     let white = material::Color {
         red: 1.0,
         green: 1.0,
         blue: 1.0,
     };
+    let min_radius = 0.2 * f32::cbrt(300.0 / (num_objects as f32));
+    let max_radius = 0.7 * f32::cbrt(300.0 / (num_objects as f32));
 
-    let p1 = Plane {
-        point: Point {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        },
-        normal: Vector {
-            x: 0.0,
-            y: 0.0,
-            z: 1.0,
-        },
-    };
-    let m1 = material::Material::create(white * 0.8, 1.0, 0.0);
-    let obj1 = scene::Object {
-        shape: Box::new(p1),
-        material: m1,
-    };
-    scene.objs.push(obj1);
-
-    add_sphere(
-        &mut scene,
-        0.1,
-        -0.03,
-        1.0,
+    // TODO: Make planes possible to use again
+    // let p1 = Plane {
+    //     point: Point {
+    //         x: 0.0,
+    //         y: 0.0,
+    //         z: 0.0,
+    //     },
+    //     normal: Vector {
+    //         x: 0.0,
+    //         y: 0.0,
+    //         z: 1.0,
+    //     },
+    // };
+    // let m1 = material::Material::create(white * 0.8, 1.0, 0.0);
+    // let obj1 = scene::Object {
+    //     shape: Box::new(p1),
+    //     material: m1,
+    // };
+    // tree.set(tree.take().add(obj1));
+    let mut rng = XorShiftRng::seed_from_u64(0);
+    let mut spheres = create_spheres(
+        num_objects / 4,
+        min_radius,
+        max_radius,
         material::Material::create_colored_1(),
+        &mut rng,
     );
-    add_sphere(
-        &mut scene,
-        -1.7,
-        -1.0,
-        0.7,
+    spheres.append(&mut create_spheres(
+        num_objects / 4,
+        min_radius,
+        max_radius,
         material::Material::create_colored_2(),
-    );
-    add_sphere(
-        &mut scene,
-        2.0,
-        0.3,
-        1.0,
+        &mut rng,
+    ));
+    spheres.append(&mut create_spheres(
+        num_objects / 4,
+        min_radius,
+        max_radius,
+        material::Material::create_colored_3(),
+        &mut rng,
+    ));
+    spheres.append(&mut create_spheres(
+        num_objects / 4,
+        min_radius,
+        max_radius,
         material::Material::create_glass(),
-    );
-
-    add_sphere(
-        &mut scene,
-        -1.0,
-        -3.3,
-        0.4,
-        material::Material::create_colored_3(),
-    );
-    add_sphere(
-        &mut scene,
-        1.2,
-        -3.3,
-        0.4,
-        material::Material::create_colored_2(),
-    );
-
-    add_sphere(
-        &mut scene,
-        2.2,
-        5.3,
-        0.8,
-        material::Material::create_colored_2(),
-    );
-    add_sphere(
-        &mut scene,
-        -2.0,
-        4.3,
-        1.1,
-        material::Material::create_colored_1(),
-    );
-
-    add_sphere(
-        &mut scene,
-        5.2,
-        15.3,
-        1.0,
-        material::Material::create_colored_1(),
-    );
-    add_sphere(
-        &mut scene,
-        -0.2,
-        10.3,
-        1.0,
-        material::Material::create_colored_3(),
-    );
-
-    // Lights
-    scene.objs.push(scene::Object {
+        &mut rng,
+    ));
+    for sphere in spheres {
+        tree.set(tree.take().add(sphere));
+    }
+    // // Lights
+    tree.set(tree.take().add(scene::Object {
         shape: Box::new(Sphere {
             center: Point {
                 x: 20.3,
@@ -196,32 +196,17 @@ fn prep_scene() -> scene::Scene {
             radius: 5.0,
         }),
         material: material::Material::create_emissive(white * 5.0),
-    });
-    scene.objs.push(scene::Object {
+    }));
+    tree.set(tree.take().add(scene::Object {
         shape: Box::new(Sphere {
             center: Point {
                 x: -20.0,
                 y: -5.0,
-                z: 10.35,
+                z: 200.0,
             },
-            radius: 4.0,
+            radius: 100.0,
         }),
         material: material::Material::create_emissive(white * 2.0),
-    });
-
-    return scene;
-}
-
-fn add_sphere(scene: &mut scene::Scene, x: f32, y: f32, radius: f32, material: material::Material) {
-    scene.objs.push(scene::Object {
-        shape: Box::new(Sphere {
-            center: Point {
-                x: 1.5 * x,
-                y: 1.5 * y,
-                z: radius,
-            },
-            radius,
-        }),
-        material,
-    });
+    }));
+    tree.into_inner()
 }

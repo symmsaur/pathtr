@@ -5,16 +5,18 @@ use rand_xorshift::XorShiftRng;
 use std::io::{self, Write};
 use std::sync::{mpsc, Arc};
 
+use crate::bbox;
 use crate::material;
 use crate::math::*;
 use crate::preview;
 use crate::scene;
+use crate::trace;
 
 const THREADS: i64 = 4;
 
 fn start_render_job(
     pool: &threadpool::ThreadPool,
-    scene: &Arc<scene::Scene>,
+    scene: &Arc<bbox::BoundingBoxTree>,
     camera: &Arc<scene::Camera>,
     tx: &mpsc::Sender<Vec<material::Color>>,
     width: usize,
@@ -50,17 +52,17 @@ fn start_render_job(
 
 pub fn render(
     preview_window: &Option<preview::Preview>,
-    scene: Arc<scene::Scene>,
+    scene: Arc<bbox::BoundingBoxTree>,
     camera: Arc<scene::Camera>,
     width: usize,
     height: usize,
     rays_per_pixel: i64,
 ) -> Vec<u8> {
-    let num_jobs = rays_per_pixel / 10;
+    let num_jobs = rays_per_pixel;
     let (tx, rx) = mpsc::channel();
     let pool = threadpool::ThreadPool::new(THREADS as usize);
     println!("Running on {} cores", THREADS);
-    println!("Spawining {} jobs", num_jobs);
+    println!("Spawning {} jobs", num_jobs);
     for _i in 0..num_jobs {
         start_render_job(
             &pool,
@@ -134,7 +136,11 @@ fn compute_gain(buffer: &Vec<material::Color>) -> f32 {
     return 255. / max;
 }
 
-fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> material::Color {
+fn sample(
+    tree: &bbox::BoundingBoxTree,
+    initial_ray: Ray,
+    rng: &mut XorShiftRng,
+) -> material::Color {
     let mut ray = material::LightRay {
         ray: initial_ray,
         light: material::Color {
@@ -147,43 +153,22 @@ fn sample(scene: &scene::Scene, initial_ray: Ray, rng: &mut XorShiftRng) -> mate
         done: false,
     };
     loop {
-        match shoot_ray(&scene, &ray.ray) {
-            Some((
-                obj,
-                Intersection {
-                    point,
-                    normal,
-                    inside,
-                    ..
-                },
-            )) => {
-                ray = obj.material.new_ray(ray, point, normal, inside, rng);
+        match trace::shoot_ray(&tree, &ray.ray) {
+            Some((o, p, n, _, i)) => {
+                ray = o.material.new_ray(ray, p, n, i, rng);
             }
             None => {
-                return ray.light;
+                return material::Color {
+                    red: 0.0,
+                    green: 0.0,
+                    blue: 0.0,
+                };
             }
         }
         if ray.done || ray.count > 100 {
             return ray.light;
         }
     }
-}
-
-fn shoot_ray<'a>(scene: &'a scene::Scene, ray: &Ray) -> Option<(&'a scene::Object, Intersection)> {
-    let mut closest_intersection: Option<(&'a scene::Object, Intersection)> = None;
-    for obj in scene.objs.iter() {
-        match obj.shape.intersect(&ray) {
-            Some(intersection) => {
-                if !closest_intersection.is_some()
-                    || intersection.distance < closest_intersection.unwrap().1.distance
-                {
-                    closest_intersection = Some((obj, intersection));
-                }
-            }
-            None => {}
-        }
-    }
-    closest_intersection
 }
 
 fn generate_camera_ray(

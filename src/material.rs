@@ -6,7 +6,7 @@ use rand::Rng;
 
 use crate::math::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Color {
     pub red: f32,
     pub green: f32,
@@ -56,6 +56,7 @@ impl AddAssign for Color {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub struct Material {
     diffuse: Color,
     // Emissivity takes priority
